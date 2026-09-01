@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>{{title}}</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@700;800&family=Geist+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <div class="phone-screen">
+    <!-- iOS статус-бар -->
+    {{> statusbar }}
+    
+    <!-- Полноэкранный контейнер ленты Vibes (Reels / TikTok) -->
+    <div class="vibes-feed-container">
+
+      <!-- Полноэкранное фоновое видео (автоплей, цикл, без звука) -->
+      <div class="vibes-media-layer">
+        <video 
+          class="vibes-video-bg" 
+          src="{{data.videoUrl}}" 
+          autoplay 
+          loop 
+          muted 
+          playsinline
+        ></video>
+        <!-- Градиентное затемнение сверху и снизу для читаемости текста -->
+        <div class="vibes-gradient-overlay"></div>
+      </div>
+
+      <!-- Верхний статус-бар -->
+      <div class="vibes-top-bar">
+        <div class="vibes-brand">
+          <span class="live-dot"></span>
+          <span class="brand-logo-text">DB OPTIMIZER</span>
+        </div>
+      </div>
+
+      <!-- Боковая панель действий Vibes (справа) -->
+      <div class="vibes-sidebar-actions">
+        <!-- Кнопка лайка -->
+        <button id="like-btn-{{data.id}}" class="vibes-action-btn like-btn" onclick="toggleFeedLike({{data.id}})" title="Лайк">
+          <div id="like-icon-circle-{{data.id}}" class="action-icon-circle">
+            {{#if data.isLikedByMe}}
+              <svg id="like-svg-{{data.id}}" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="#1fdc6f" stroke="#1fdc6f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+            {{else}}
+              <svg id="like-svg-{{data.id}}" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+            {{/if}}
+          </div>
+          <span id="like-count-{{data.id}}" class="action-count">{{data.likesCount}}</span>
+        </button>
+
+        <!-- Кнопка перехода к следующему видео -->
+        <a href="/database-indexes/feed?id={{data.id}}&next=true" class="vibes-action-btn next-btn" title="Следующий индекс">
+          <div class="action-icon-circle next-circle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <polyline points="19 12 12 19 5 12"></polyline>
+            </svg>
+          </div>
+          <span class="action-count next-label">Далее</span>
+        </a>
+      </div>
+
+      <!-- Нижний информационный оверлей Vibes (прямо поверх видео) -->
+      <div class="vibes-bottom-overlay">
+        <!-- Тег типа и структуры индекса -->
+        <div class="vibes-tags-row">
+          <span class="vibes-type-pill">{{data.indexType}} Index</span>
+          <span class="vibes-table-pill">{{data.tableName}}.{{data.indexedColumn}}</span>
+        </div>
+
+        <!-- Название индекса -->
+        <h2 class="vibes-title">{{data.indexName}}</h2>
+
+        <!-- Текстовое описание: свернуть / развернуть (больше / меньше) -->
+        <div class="vibes-desc-wrapper">
+          <input type="checkbox" id="desc-toggle-{{data.id}}" class="desc-toggle-checkbox">
+          
+          <p class="vibes-desc-text">
+            {{data.description}}
+          </p>
+
+          <label for="desc-toggle-{{data.id}}" class="desc-toggle-btn">
+            <span class="txt-more">больше</span>
+            <span class="txt-less">меньше</span>
+          </label>
+        </div>
+
+        <!-- Метрики производительности -->
+        <div class="vibes-metrics-chip-row">
+          <div class="vibes-chip highlight">
+            <span class="chip-label">Время:</span>
+            <span class="chip-val">{{data.avgQueryTimeMs}} ms</span>
+          </div>
+          <div class="vibes-chip">
+            <span class="chip-label">Селективность:</span>
+            <span class="chip-val">{{data.selectivity}}%</span>
+          </div>
+          <div class="vibes-chip">
+            <span class="chip-label">Кардинальность:</span>
+            <span class="chip-val">{{data.formattedCardinality}}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Нижняя панель навигации (Tabbar) -->
+    {{> tabbar activeTab=activeTab }}
+  </div>
+
+  <script>
+    async function toggleFeedLike(id) {
+      try {
+        const response = await fetch(`/database-indexes/${id}/like`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        if (response.ok) {
+          const result = await response.json();
+          const countEl = document.getElementById(`like-count-${id}`);
+          const svgEl = document.getElementById(`like-svg-${id}`);
+          
+          if (countEl) countEl.innerText = result.likesCount;
+          if (svgEl) {
+            if (result.isLikedByMe) {
+              svgEl.setAttribute('fill', '#1fdc6f');
+              svgEl.setAttribute('stroke', '#1fdc6f');
+            } else {
+              svgEl.setAttribute('fill', 'none');
+              svgEl.setAttribute('stroke', '#ffffff');
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error toggling like:', err);
+      }
+    }
+  </script>
+
+</body>
+</html>

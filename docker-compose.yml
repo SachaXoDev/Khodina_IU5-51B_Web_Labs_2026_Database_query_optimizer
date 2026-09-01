@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: lab_minio
+    ports:
+      - "9000:9000" # API port (для подключения из кода)
+      - "9001:9001" # Web Console (для скриншотов и ручной загрузки)
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadminpassword
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    restart: always
+
+volumes:
+  minio_data:

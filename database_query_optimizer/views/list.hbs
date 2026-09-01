@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@700;800&family=Geist+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <div class="phone-screen">
+    <!-- iOS статус-бар -->
+    {{> statusbar }}
+
+    <!-- Шапка экрана -->
+    <header class="mobile-header">
+      <div class="header-logo-group">
+        <span class="brand-logo-text">DB OPTIMIZER</span>
+        <span class="header-pipe">|</span>
+        <span class="service-name">B-tree Catalog</span>
+      </div>
+    </header>
+
+    <!-- Основной контент каталога -->
+    <main class="page-scrollable">
+      <div class="content-padding">
+        
+        <!-- Одно поле для фильтрации по времени -->
+        <form action="/database-indexes/list" method="GET" class="filter-form-box">
+          <div class="filter-input-row">
+            <input 
+              type="text" 
+              id="query" 
+              name="query" 
+              value="{{query}}" 
+              placeholder="Поиск по времени..."
+              class="form-input"
+            />
+            <button type="submit" class="btn-filter">Найти</button>
+          </div>
+        </form>
+
+        <!-- Плитка в 2 столбца -->
+        <div class="index-grid-2col">
+          {{#each data}}
+            <a href="/database-indexes/feed?id={{this.id}}" class="tile-card">
+              <!-- Изображение -->
+              <div class="tile-image-wrapper">
+                <img src="{{this.imageUrl}}" alt="{{this.indexName}}" class="tile-image" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\' viewBox=\'0 0 200 200\'><rect fill=\'%2317181c\' width=\'200\' height=\'200\'/><text fill=\'%231fdc6f\' font-family=\'monospace\' font-size=\'11\' x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\'>B-Tree</text></svg>';">
+                
+                <!-- Количество лайков (динамическое состояние) -->
+                {{#if this.isLikedByMe}}
+                  <div class="tile-likes-badge liked">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="#1ee46a" stroke="#1ee46a" stroke-width="2">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span>{{this.likesCount}}</span>
+                  </div>
+                {{else}}
+                  <div class="tile-likes-badge unliked">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span>{{this.likesCount}}</span>
+                  </div>
+                {{/if}}
+              </div>
+
+              <!-- Название -->
+              <div class="tile-info">
+                <h3 class="tile-title" title="{{this.indexName}}">{{this.indexName}}</h3>
+                <span class="tile-subtitle">{{this.tableName}}.{{this.indexedColumn}}</span>
+                <span class="tile-time">Время: {{this.avgQueryTimeMs}} ms</span>
+              </div>
+            </a>
+          {{else}}
+            <div class="empty-state-box" style="grid-column: span 2;">
+              <p>Индексы по запросу не найдены.</p>
+              <a href="/database-indexes/list" class="btn-link-reset">Сбросить фильтр</a>
+            </div>
+          {{/each}}
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Нижняя панель навигации (Tabbar) -->
+    {{> tabbar activeTab=activeTab }}
+  </div>
+
+</body>
+</html>

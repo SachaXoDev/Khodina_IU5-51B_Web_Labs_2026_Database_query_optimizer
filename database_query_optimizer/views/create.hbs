@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@700;800&family=Geist+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <div class="phone-screen">
+    <!-- iOS статус-бар -->
+    {{> statusbar }}
+
+    <!-- Шапка экрана -->
+    <header class="mobile-header">
+      <div class="header-logo-group">
+        <span class="brand-logo-text">DB OPTIMIZER</span>
+        <span class="header-pipe">|</span>
+        <span class="service-name">B-tree Creator</span>
+      </div>
+    </header>
+
+    <!-- Основной контент страницы создания (точно по макету Figma) -->
+    <main class="creator-container">
+      <form action="/database-indexes/create" method="POST" class="creator-form">
+        <input type="hidden" name="indexType" value="B-tree" />
+
+        <!-- 1. Секция: Медиа-файлы -->
+        <div class="figma-section-block">
+          <div class="figma-section-title">Медиа-файлы</div>
+          <div class="figma-card-box">
+            <div class="figma-media-grid">
+              <label class="figma-upload-zone" for="imageUpload">
+                <input type="file" id="imageUpload" class="visually-hidden" accept="image/*" />
+                <div class="figma-upload-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </div>
+                <span class="figma-upload-text">Выбрать изображение</span>
+              </label>
+
+              <label class="figma-upload-zone" for="videoUpload">
+                <input type="file" id="videoUpload" class="visually-hidden" accept="video/*" />
+                <div class="figma-upload-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="23 7 16 12 23 17 23 7"/>
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                  </svg>
+                </div>
+                <span class="figma-upload-text">Выбрать видеоролик</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Секция: Основная информация -->
+        <div class="figma-section-block">
+          <div class="figma-section-title">Основная информация</div>
+          <div class="figma-card-box">
+            <div class="figma-field-item">
+              <label for="indexName" class="figma-field-label">Название индекса</label>
+              <input type="text" id="indexName" name="indexName" class="figma-input font-mono" placeholder="idx_users_email" value="{{draft.indexName}}" required />
+            </div>
+            <div class="figma-field-item">
+              <label for="description" class="figma-field-label">Описание</label>
+              <input type="text" id="description" name="description" class="figma-input" placeholder="Оптимизация поиска по email, исключение Seq Scan" value="{{draft.description}}" />
+            </div>
+            <div class="figma-field-item">
+              <label for="querySnippet" class="figma-field-label">SQL-сниппет</label>
+              <input type="text" id="querySnippet" name="querySnippet" class="figma-input font-mono" placeholder="SELECT * FROM table WHERE column = $1;" value="{{draft.querySnippet}}" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Секция: Спецификация B-Tree -->
+        <div class="figma-section-block">
+          <div class="figma-section-title">Спецификация B-Tree</div>
+          <div class="figma-card-box">
+            <div class="figma-grid-2col">
+              <div class="figma-field-item">
+                <label for="tableName" class="figma-field-label">Таблица</label>
+                <input type="text" id="tableName" name="tableName" class="figma-input font-mono" placeholder="users" value="{{draft.tableName}}" required />
+              </div>
+              <div class="figma-field-item">
+                <label for="indexedColumn" class="figma-field-label">Колонка</label>
+                <input type="text" id="indexedColumn" name="indexedColumn" class="figma-input font-mono" placeholder="email" value="{{draft.indexedColumn}}" required />
+              </div>
+              <div class="figma-field-item">
+                <label for="avgQueryTimeMs" class="figma-field-label">Время выполнения (мс)</label>
+                <input type="text" id="avgQueryTimeMs" name="avgQueryTimeMs" class="figma-input font-mono" placeholder="0.28" value="{{draft.avgQueryTimeMs}}" />
+              </div>
+              <div class="figma-field-item">
+                <label for="cardinality" class="figma-field-label">Кардинальность</label>
+                <input type="text" id="cardinality" name="cardinality" class="figma-input font-mono" placeholder="1 250 000" value="{{draft.formattedCardinality}}" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Кнопка создания -->
+        <div class="figma-submit-block">
+          <button type="button" class="figma-btn-submit">
+            Создать B-tree индекс
+          </button>
+        </div>
+      </form>
+    </main>
+
+    <!-- Нижняя панель навигации (Tabbar) -->
+    {{> tabbar activeTab=activeTab }}
+  </div>
+
+</body>
+</html>

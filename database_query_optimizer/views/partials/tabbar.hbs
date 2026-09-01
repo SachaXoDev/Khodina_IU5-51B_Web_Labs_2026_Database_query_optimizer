@@ -1,0 +1,36 @@
+<nav class="mobile-tabbar">
+  <!-- 1. Лента -->
+  <a href="/database-indexes/feed" class="tab-item {{#if (eq activeTab 'feed')}}active{{/if}}">
+    <div class="tab-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+      </svg>
+    </div>
+    <span class="tab-label">Лента</span>
+  </a>
+
+  <!-- 2. Добавление -->
+  <a href="/database-indexes/create" class="tab-item {{#if (eq activeTab 'create')}}active{{/if}}">
+    <div class="tab-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="16"></line>
+        <line x1="8" y1="12" x2="16" y2="12"></line>
+      </svg>
+    </div>
+    <span class="tab-label">Добавление</span>
+  </a>
+
+  <!-- 3. Плитка карточек -->
+  <a href="/database-indexes/list" class="tab-item {{#if (eq activeTab 'list')}}active{{/if}}">
+    <div class="tab-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7"></rect>
+        <rect x="14" y="3" width="7" height="7"></rect>
+        <rect x="14" y="14" width="7" height="7"></rect>
+        <rect x="3" y="14" width="7" height="7"></rect>
+      </svg>
+    </div>
+    <span class="tab-label">Плитка</span>
+  </a>
+</nav>

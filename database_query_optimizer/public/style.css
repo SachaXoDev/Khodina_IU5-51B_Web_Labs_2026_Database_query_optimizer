@@ -1,0 +1,1012 @@
+/* ==========================================================================
+   Aiven-Style SQL Query Optimizer Theme (Black, White & Green)
+   ========================================================================== */
+
+:root {
+  --color-bg-base: #0d0e10;
+  --color-bg-card: #17181c;
+  --color-bg-card-secondary: #222328;
+  --color-bg-input: #0a0a0a;
+  
+  /* Фирменный зеленый Aiven Primary Green */
+  --color-accent-green: #1fdc6f;
+  --color-accent-green-hover: #5ffa74;
+  --color-accent-green-deep: #0ab060;
+  --color-accent-green-glow: rgba(31, 220, 111, 0.35);
+  
+  --color-accent-orange: #1fdc6f; /* алиас для совместимости */
+  --color-accent-orange-hover: #5ffa74;
+  
+  --color-text-main: #ffffff;
+  --color-text-muted: #d6d6d6;
+  --color-text-dim: #919294;
+  --color-border: #2d2e30;
+  --color-border-light: #444547;
+  --color-border-accent: rgba(31, 220, 111, 0.45);
+  --color-teal: #1fdc6f;
+  --color-cyan: #2ed0cd;
+  
+  --font-display: 'Funnel Display', 'Inter', sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+html, body {
+  background-color: #050608;
+  color: var(--color-text-main);
+  font-family: var(--font-sans);
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ==========================================================================
+   Фиксированный вертикальный мобильный экран (390 x 844)
+   ========================================================================== */
+.phone-screen {
+  width: 390px;
+  height: 844px;
+  min-width: 390px;
+  max-width: 390px;
+  min-height: 844px;
+  max-height: 844px;
+  background-color: var(--color-bg-base);
+  border-radius: 44px;
+  border: 10px solid #22242a;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* iOS Status Bar */
+.ios-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px 8px;
+  background: transparent;
+  color: #ffffff;
+  z-index: 20;
+}
+
+.ios-status-time {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+.ios-status-icons {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ios-icon {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Шапка обычных страниц (Каталог, Создание) */
+.mobile-header {
+  height: 48px;
+  min-height: 48px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  background-color: transparent;
+  border-bottom: none;
+  z-index: 10;
+}
+
+.header-logo-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo-text {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+}
+
+.header-pipe {
+  font-size: 16px;
+  font-weight: 300;
+  color: #555861;
+}
+
+.service-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #f4f4f5;
+}
+
+.header-index-badge {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-text-muted);
+  background-color: var(--color-bg-card-secondary);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+}
+
+/* Прокручиваемый контент обычных страниц */
+.page-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 20px;
+}
+
+.content-padding {
+  padding: 8px 20px 20px;
+}
+
+.section-title-box {
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-text-main);
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+
+.section-desc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   VIBES FEED: Полноэкранный TikTok / Reels интерфейс
+   ========================================================================== */
+.vibes-feed-container {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  height: calc(844px - 64px - 20px); /* Высота без таббара и рамки */
+  overflow: hidden;
+  background-color: #000;
+}
+
+.vibes-media-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.vibes-video-bg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Затемняющий градиент сверху и снизу для идеальной читаемости текста */
+.vibes-gradient-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    rgba(13, 14, 16, 0.75) 0%,
+    rgba(13, 14, 16, 0.05) 25%,
+    rgba(13, 14, 16, 0.15) 50%,
+    rgba(13, 14, 16, 0.85) 80%,
+    rgba(13, 14, 16, 0.98) 100%
+  );
+  pointer-events: none;
+}
+
+/* Верхняя плашка Vibes */
+.vibes-top-bar {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 5;
+}
+
+.vibes-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(13, 14, 16, 0.7);
+  backdrop-filter: blur(10px);
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vibes-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.vibes-counter {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-text-muted);
+  background: rgba(13, 14, 16, 0.7);
+  backdrop-filter: blur(10px);
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Боковая панель действий Vibes (справа) */
+.vibes-sidebar-actions {
+  position: absolute;
+  right: 14px;
+  bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  z-index: 5;
+}
+
+.vibes-action-btn {
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  text-decoration: none;
+  color: #fff;
+}
+
+.action-icon-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(30, 32, 38, 0.88);
+  backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.action-icon-circle:active {
+  transform: scale(0.92);
+}
+
+.action-icon-circle.next-circle {
+  background: #232730;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.action-icon-circle.next-circle svg {
+  stroke: #ffffff;
+}
+
+.action-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: #c9d1d9;
+  letter-spacing: -0.2px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.action-count.next-label {
+  color: #9aa0a6;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Нижний информационный оверлей */
+.vibes-bottom-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 16px 14px 12px 14px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 82%; /* Оставляет место под боковые кнопки */
+}
+
+.vibes-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vibes-type-pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background-color: var(--color-accent-orange);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.vibes-table-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-teal);
+  background: rgba(0, 214, 170, 0.18);
+  border: 1px solid rgba(0, 214, 170, 0.35);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.vibes-title {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+  line-height: 1.15;
+}
+
+/* Текстовое описание: свернуть / развернуть (больше / меньше) */
+.vibes-desc-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.desc-toggle-checkbox {
+  display: none;
+}
+
+.vibes-desc-text {
+  font-size: 13px;
+  color: #e4e4e7;
+  line-height: 1.4;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* По умолчанию обрывается на 2 строках */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.desc-toggle-btn {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-accent-orange);
+  cursor: pointer;
+  margin-top: 3px;
+  padding: 0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  user-select: none;
+}
+
+.desc-toggle-btn:hover {
+  text-decoration: underline;
+}
+
+.txt-less {
+  display: none;
+}
+
+/* При раскрытии убираем ограничение строк и показываем "меньше" */
+.desc-toggle-checkbox:checked ~ .vibes-desc-text {
+  -webkit-line-clamp: unset;
+  display: block;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.desc-toggle-checkbox:checked ~ .desc-toggle-btn .txt-more {
+  display: none;
+}
+
+.desc-toggle-checkbox:checked ~ .desc-toggle-btn .txt-less {
+  display: inline;
+}
+
+.vibes-metrics-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.vibes-chip {
+  background: rgba(23, 24, 28, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 3px 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  display: flex;
+  gap: 4px;
+}
+
+.vibes-chip.highlight .chip-val {
+  color: var(--color-accent-orange);
+}
+
+.chip-label {
+  color: var(--color-text-dim);
+}
+
+.chip-val {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: #fff;
+}
+
+.vibes-sql-box {
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 6px 9px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vibes-sql-box code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #e4e4e7;
+}
+
+/* ==========================================================================
+   Страница 2: Каталог (List)
+   ========================================================================== */
+.filter-form-box {
+  background: transparent;
+  border: none;
+  padding: 0;
+  border-radius: 0;
+  margin-bottom: 16px;
+}
+
+.filter-input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.form-input, .form-textarea {
+  width: 100%;
+  background-color: #121316;
+  border: 1px solid #282a30;
+  color: #f4f4f5;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.form-input::placeholder, .form-textarea::placeholder {
+  color: #6b7280;
+}
+
+.form-input:focus, .form-textarea:focus {
+  border-color: #1fdc6f;
+  box-shadow: 0 0 0 2px rgba(31, 220, 111, 0.2);
+}
+
+.btn-filter {
+  background-color: #1fdc6f;
+  border: none;
+  color: #0b0c0e;
+  padding: 0 24px;
+  height: 44px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.btn-filter:hover {
+  background-color: #1fdc6f;
+  opacity: 0.9;
+  border-color: transparent;
+}
+
+.btn-filter:active {
+  transform: scale(0.97);
+}
+
+/* ==========================================================================
+   Страница 2: Каталог (List) - Плитка в 2 столбца
+   ========================================================================== */
+.index-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.tile-card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tile-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-accent-orange);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.tile-card:active {
+  transform: scale(0.98);
+}
+
+.tile-image-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background-color: #000;
+  overflow: hidden;
+}
+
+.tile-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tile-likes-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  border-radius: 20px;
+  padding: 3px 9px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  transition: all 0.2s ease;
+}
+
+.tile-likes-badge.liked {
+  color: #1ee46a;
+  border: 1.5px solid #1ee46a;
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.tile-likes-badge.unliked {
+  color: #c9d1d9;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tile-info {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tile-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+  letter-spacing: -0.2px;
+}
+
+.tile-subtitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #1ee46a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tile-time {
+  font-family: var(--font-main);
+  font-size: 11px;
+  color: #8c93a0;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-badge-type {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.75);
+  color: var(--color-accent-orange);
+  border: 1px solid var(--color-border-accent);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.card-badge-likes {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #ff5252;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.catalog-card-content {
+  padding: 14px;
+}
+
+.catalog-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin-bottom: 2px;
+}
+
+.catalog-card-target {
+  font-size: 11px;
+  color: var(--color-text-dim);
+  margin-bottom: 8px;
+}
+
+.catalog-card-target code {
+  font-family: var(--font-mono);
+  color: var(--color-teal);
+}
+
+.catalog-card-desc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
+
+.catalog-card-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.metric-pill {
+  background-color: var(--color-bg-card-secondary);
+  border: 1px solid var(--color-border);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  display: flex;
+  gap: 4px;
+}
+
+.pill-label {
+  color: var(--color-text-dim);
+}
+
+.pill-val {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.catalog-card-footer {
+  border-top: 1px solid var(--color-border);
+  padding-top: 10px;
+}
+
+.btn-card-details {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--color-accent-orange);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.empty-state-box {
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  padding: 24px 16px;
+  text-align: center;
+  border-radius: 12px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.btn-link-reset {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--color-accent-orange);
+  text-decoration: underline;
+  font-size: 12px;
+}
+
+/* ==========================================================================
+   Страница 3: Создание (Figma Pixel Perfect Match)
+   ========================================================================== */
+.creator-container {
+  flex: 1;
+  padding: 12px 16px 0 16px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.creator-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  justify-content: flex-start;
+}
+
+.figma-section-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.figma-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.2px;
+}
+
+.figma-card-box {
+  background-color: #17191e;
+  border: 1px solid #232730;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+.figma-media-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.figma-upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px 8px;
+  background-color: #101216;
+  border: 1px dashed #2b2f3a;
+  border-radius: 8px;
+  cursor: pointer;
+  box-sizing: border-box;
+  text-align: center;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.figma-upload-zone:hover {
+  border-color: #3b4252;
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.figma-upload-icon {
+  color: #8b91a0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.figma-upload-text {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #8b91a0;
+  line-height: 1.2;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.figma-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 10px;
+}
+
+.figma-field-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.figma-field-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #9297a0;
+}
+
+.figma-input {
+  width: 100%;
+  background-color: #0e1014;
+  border: 1px solid #22252c;
+  color: #ffffff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.figma-input.font-mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.figma-input::placeholder {
+  color: #4b525f;
+}
+
+.figma-input:focus {
+  border-color: #22c55e;
+}
+
+.figma-submit-block {
+  margin-top: auto;
+  margin-left: -16px;
+  margin-right: -16px;
+  padding: 0 16px;
+  margin-bottom: 12px;
+}
+
+.figma-btn-submit {
+  width: 100%;
+  background-color: #1ee46a;
+  color: #000000;
+  border: none;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s, transform 0.05s;
+  letter-spacing: -0.1px;
+}
+
+.figma-btn-submit:hover {
+  background-color: #19c95d;
+}
+
+.figma-btn-submit:active {
+  transform: scale(0.99);
+}
+
+/* ==========================================================================
+   Нижняя панель навигации (Таббар)
+   ========================================================================== */
+.mobile-tabbar {
+  height: 64px;
+  min-height: 64px;
+  background-color: rgba(13, 14, 16, 0.96);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 10px;
+  z-index: 10;
+}
+
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--color-text-dim);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  transition: color 0.15s;
+}
+
+.tab-item.active {
+  color: var(--color-accent-orange);
+}
+
+.tab-label {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.file-input-hidden {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  position: absolute !important;
+}
