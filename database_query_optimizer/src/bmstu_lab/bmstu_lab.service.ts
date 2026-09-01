@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 export type ServiceStatus = 'draft' | 'published' | 'deleted';
 
-export interface IndexServiceItem {
+export interface DatabaseIndexOptimization {
   id: number;
   status: ServiceStatus;
   tableName: string;
@@ -25,7 +25,7 @@ export class BmstuLabService {
   private readonly minioBaseUrl = 'http://localhost:9000/media';
   public readonly currentUserId = 101; // ID текущего авторизованного пользователя
 
-  private services: IndexServiceItem[] = [
+  private optimizations: DatabaseIndexOptimization[] = [
     {
       id: 1,
       status: 'published',
@@ -130,7 +130,7 @@ export class BmstuLabService {
     },
   ];
 
-  private enrichService(item: IndexServiceItem) {
+  private enrichOptimization(item: DatabaseIndexOptimization) {
     const isLikedByMe = item.userLikes.includes(this.currentUserId);
     return {
       ...item,
@@ -144,7 +144,7 @@ export class BmstuLabService {
   }
 
   toggleLike(id: number) {
-    const item = this.services.find((s) => s.id === id);
+    const item = this.optimizations.find((s) => s.id === id);
     if (!item) return null;
 
     const userIndex = item.userLikes.indexOf(this.currentUserId);
@@ -155,16 +155,16 @@ export class BmstuLabService {
       // Убрать лайк
       item.userLikes.splice(userIndex, 1);
     }
-    return this.enrichService(item);
+    return this.enrichOptimization(item);
   }
 
-  getDraftService() {
-    const draft = this.services.find((s) => s.status === 'draft');
-    return draft ? this.enrichService(draft) : null;
+  getDraftOptimization() {
+    const draft = this.optimizations.find((s) => s.status === 'draft');
+    return draft ? this.enrichOptimization(draft) : null;
   }
 
-  getPublishedServices(searchQuery?: string) {
-    let list = this.services.filter((s) => s.status === 'published');
+  getPublishedOptimizations(searchQuery?: string) {
+    let list = this.optimizations.filter((s) => s.status === 'published');
     if (searchQuery && searchQuery.trim() !== '') {
       const q = searchQuery.trim().toLowerCase().replace(',', '.');
       const num = parseFloat(q);
@@ -187,11 +187,11 @@ export class BmstuLabService {
         return false;
       });
     }
-    return list.map((item) => this.enrichService(item));
+    return list.map((item) => this.enrichOptimization(item));
   }
 
   getFeedItem(id?: number, next?: boolean) {
-    const published = this.services.filter((s) => s.status === 'published');
+    const published = this.optimizations.filter((s) => s.status === 'published');
     if (published.length === 0) return null;
 
     let currentIndex = 0;
@@ -210,14 +210,14 @@ export class BmstuLabService {
     const nextItem = published[(currentIndex + 1) % published.length];
 
     return {
-      current: this.enrichService(currentItem),
+      current: this.enrichOptimization(currentItem),
       nextId: nextItem.id,
     };
   }
 
-  createService(data: Partial<IndexServiceItem>) {
-    const newId = this.services.length > 0 ? Math.max(...this.services.map(s => s.id)) + 1 : 1;
-    const item: IndexServiceItem = {
+  createOptimization(data: Partial<DatabaseIndexOptimization>) {
+    const newId = this.optimizations.length > 0 ? Math.max(...this.optimizations.map(s => s.id)) + 1 : 1;
+    const item: DatabaseIndexOptimization = {
       id: newId,
       status: 'published',
       tableName: data.tableName || 'new_table',
@@ -234,7 +234,7 @@ export class BmstuLabService {
       videoKey: 'index_users_email.mp4',
       userLikes: [],
     };
-    this.services.unshift(item);
-    return this.enrichService(item);
+    this.optimizations.unshift(item);
+    return this.enrichOptimization(item);
   }
 }

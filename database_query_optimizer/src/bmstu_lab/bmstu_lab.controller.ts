@@ -61,7 +61,7 @@ export class BmstuLabController {
   @Get('create')
   @Render('create')
   getCreatePage() {
-    const draft = this.labService.getDraftService();
+    const draft = this.labService.getDraftOptimization();
     return {
       title: 'Добавление индекса',
       activeTab: 'create',
@@ -83,7 +83,7 @@ export class BmstuLabController {
   @Get('list')
   @Render('list')
   getList(@Query('query') query?: string) {
-    const items = this.labService.getPublishedServices(query);
+    const items = this.labService.getPublishedOptimizations(query);
 
     return {
       title: 'Каталог индексов',
