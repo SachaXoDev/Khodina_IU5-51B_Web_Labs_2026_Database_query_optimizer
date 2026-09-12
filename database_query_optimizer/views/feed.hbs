@@ -96,18 +96,18 @@
         </div>
 
         <!-- Метрики производительности -->
-        <div class="vibes-metrics-chip-row">
-          <div class="vibes-chip">
-            <span class="chip-label">Время:</span>
-            <span class="chip-val">{{data.avgQueryTimeMs}} ms</span>
+        <div class="vibes-metrics-grid">
+          <div class="vibes-metric-card">
+            <span class="metric-card-label">ВРЕМЯ</span>
+            <span class="metric-card-val">{{data.avgQueryTimeMs}} ms</span>
           </div>
-          <div class="vibes-chip">
-            <span class="chip-label">Селективность:</span>
-            <span class="chip-val">{{data.selectivity}}%</span>
+          <div class="vibes-metric-card">
+            <span class="metric-card-label">CARDINALITY</span>
+            <span class="metric-card-val">{{data.cardinality}}</span>
           </div>
-          <div class="vibes-chip">
-            <span class="chip-label">Кардинальность:</span>
-            <span class="chip-val">{{data.formattedCardinality}}</span>
+          <div class="vibes-metric-card">
+            <span class="metric-card-label">КОЛ-ВО СТРОК</span>
+            <span class="metric-card-val">{{data.compactTotalRows}}</span>
           </div>
         </div>
       </div>

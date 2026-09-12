@@ -1,22 +1,22 @@
 import { Controller, Get, Param, Post, Query, Render, Res } from '@nestjs/common';
 import type { Response } from 'express';
-import { BmstuLabService } from './bmstu_lab.service';
+import { IndexesService } from './indexes.service';
 
 @Controller('database-indexes')
-export class BmstuLabController {
-  constructor(private readonly labService: BmstuLabService) {}
+export class IndexesController {
+  constructor(private readonly indexesService: IndexesService) {}
 
-  // 1. GET: Лента карточек (Vibes-стиль с полноэкранным видео)
-  // URL: /database-indexes/feed или /database-indexes/feed?id=1 или /database-indexes/feed?id=1&next=true
+  // 1. GET: Лента индексов (Vibes-стиль с полноэкранным видео)
+  // URL: /database-indexes/feed или /database-indexes/feed?id=1
   @Get('feed')
   @Render('feed')
-  getFeed(
+  renderFeed(
     @Query('id') id?: string,
     @Query('next') next?: string,
   ) {
     const numericId = id ? parseInt(id, 10) : undefined;
     const isNext = next === 'true';
-    const feedData = this.labService.getFeedItem(numericId, isNext);
+    const feedData = this.indexesService.getFeedIndex(numericId, isNext);
 
     return {
       title: 'Лента оптимизации индексов B-tree',
@@ -26,11 +26,11 @@ export class BmstuLabController {
     };
   }
 
-  // 1.1 POST / GET: Переключение лайка (поставить / убрать)
+  // 1.1 POST / GET: Переключение лайка
   @Post(':id/like')
   toggleLikePostRoot(@Param('id') id: string) {
     const numericId = parseInt(id, 10);
-    const updated = this.labService.toggleLike(numericId);
+    const updated = this.indexesService.toggleLike(numericId);
     return {
       success: !!updated,
       isLikedByMe: updated ? updated.isLikedByMe : false,
@@ -41,7 +41,7 @@ export class BmstuLabController {
   @Post('feed/:id/like')
   toggleLikePost(@Param('id') id: string) {
     const numericId = parseInt(id, 10);
-    const updated = this.labService.toggleLike(numericId);
+    const updated = this.indexesService.toggleLike(numericId);
     return {
       success: !!updated,
       isLikedByMe: updated ? updated.isLikedByMe : false,
@@ -52,7 +52,7 @@ export class BmstuLabController {
   @Get('feed/:id/like')
   toggleLikeGet(@Param('id') id: string, @Res() res: Response) {
     const numericId = parseInt(id, 10);
-    this.labService.toggleLike(numericId);
+    this.indexesService.toggleLike(numericId);
     return res.redirect(`/database-indexes/feed?id=${numericId}`);
   }
 
@@ -60,8 +60,8 @@ export class BmstuLabController {
   // URL: /database-indexes/create
   @Get('create')
   @Render('create')
-  getCreatePage() {
-    const draft = this.labService.getDraftOptimization();
+  renderCreateForm() {
+    const draft = this.indexesService.getDraftIndex();
     return {
       title: 'Добавление индекса',
       activeTab: 'create',
@@ -73,17 +73,15 @@ export class BmstuLabController {
   // URL: /database-indexes/create
   @Post('create')
   handleCreatePost(@Res() res: Response) {
-    // В первой лабораторной добавлять новые карточки нельзя, но можно заполнять
-    // Перенаправляем пользователя на страницу каталога
     return res.redirect('/database-indexes/list');
   }
 
-  // 3. GET: Каталог индексов (плитка в 2 столбца с фильтрацией по теме)
-  // URL: /database-indexes/list или /database-indexes/list?query=users
+  // 3. GET: Каталог индексов (с фильтрацией по cardinality)
+  // URL: /database-indexes/list или /database-indexes/list?query=1000
   @Get('list')
   @Render('list')
-  getList(@Query('query') query?: string) {
-    const items = this.labService.getPublishedOptimizations(query);
+  renderList(@Query('query') query?: string) {
+    const items = this.indexesService.getPublishedIndexes(query);
 
     return {
       title: 'Каталог индексов',

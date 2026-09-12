@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
-export type ServiceStatus = 'draft' | 'published' | 'deleted';
+export type IndexStatus = 'draft' | 'published' | 'deleted';
 
-export interface DatabaseIndexOptimization {
+export interface DatabaseIndexItem {
   id: number;
-  status: ServiceStatus;
+  status: IndexStatus;
   tableName: string;
   indexName: string;
   indexedColumn: string;
@@ -21,11 +21,11 @@ export interface DatabaseIndexOptimization {
 }
 
 @Injectable()
-export class BmstuLabService {
+export class IndexesService {
   private readonly minioBaseUrl = 'http://localhost:9000/media';
   public readonly currentUserId = 101; // ID текущего авторизованного пользователя
 
-  private optimizations: DatabaseIndexOptimization[] = [
+  private indexes: DatabaseIndexItem[] = [
     {
       id: 1,
       status: 'published',
@@ -33,11 +33,11 @@ export class BmstuLabService {
       indexName: 'idx_users_email',
       indexedColumn: 'email',
       indexType: 'B-tree',
-      totalRows: 1200000,
-      cardinality: 1180000,
+      totalRows: 1250000,
+      cardinality: 1000,
       selectivity: 98.3,
       avgQueryTimeMs: 0.28,
-      description: 'Высокоэффективная оптимизация поиска пользователей по точному совпадению и префиксу email. Позволяет полностью исключить тяжелое последовательное сканирование (Seq Scan) таблицы при авторизации и валидации учетных записей. Значительно снижает нагрузку на дисковую подсистему и процессор при пиковом трафике.',
+      description: 'B-tree индекс по уникальным email пользователей. Обеспечивает мгновенный доступ к аккаунту и защищает базу данных от деградации при Seq Scan.',
       querySnippet: 'SELECT * FROM users WHERE email = $1;',
       imageKey: 'index_users_email.jpg',
       videoKey: 'index_users_email.mp4',
@@ -113,7 +113,7 @@ export class BmstuLabService {
     },
     {
       id: 6,
-      status: 'deleted', // Удаленная услуга (никогда не отображается в интерфейсе)
+      status: 'deleted', // Удаленная запись (никогда не отображается в интерфейсе)
       tableName: 'temp_archive',
       indexName: 'idx_temp_archive_old',
       indexedColumn: 'deleted_at',
@@ -130,7 +130,19 @@ export class BmstuLabService {
     },
   ];
 
-  private enrichOptimization(item: DatabaseIndexOptimization) {
+  private formatCompactNumber(num: number): string {
+    if (num >= 1_000_000) {
+      const val = num / 1_000_000;
+      return `${Number(val.toFixed(2))}M`;
+    }
+    if (num >= 1_000) {
+      const val = num / 1_000;
+      return `${Number(val.toFixed(1))}K`;
+    }
+    return num.toString();
+  }
+
+  private enrichIndex(item: DatabaseIndexItem) {
     const isLikedByMe = item.userLikes.includes(this.currentUserId);
     return {
       ...item,
@@ -140,11 +152,13 @@ export class BmstuLabService {
       videoUrl: `${this.minioBaseUrl}/${item.videoKey}`,
       formattedTotalRows: item.totalRows.toLocaleString('ru-RU'),
       formattedCardinality: item.cardinality.toLocaleString('ru-RU'),
+      compactTotalRows: this.formatCompactNumber(item.totalRows),
+      compactCardinality: this.formatCompactNumber(item.cardinality),
     };
   }
 
   toggleLike(id: number) {
-    const item = this.optimizations.find((s) => s.id === id);
+    const item = this.indexes.find((s) => s.id === id);
     if (!item) return null;
 
     const userIndex = item.userLikes.indexOf(this.currentUserId);
@@ -155,43 +169,43 @@ export class BmstuLabService {
       // Убрать лайк
       item.userLikes.splice(userIndex, 1);
     }
-    return this.enrichOptimization(item);
+    return this.enrichIndex(item);
   }
 
-  getDraftOptimization() {
-    const draft = this.optimizations.find((s) => s.status === 'draft');
-    return draft ? this.enrichOptimization(draft) : null;
+  getDraftIndex() {
+    const draft = this.indexes.find((s) => s.status === 'draft');
+    return draft ? this.enrichIndex(draft) : null;
   }
 
-  getPublishedOptimizations(searchQuery?: string) {
-    let list = this.optimizations.filter((s) => s.status === 'published');
-    if (searchQuery && searchQuery.trim() !== '') {
-      const q = searchQuery.trim().toLowerCase().replace(',', '.');
-      const num = parseFloat(q);
+  getPublishedIndexes(searchQuery?: string) {
+    let list = this.indexes.filter((s) => s.status === 'published');
+    if (searchQuery !== undefined && searchQuery !== null && searchQuery.trim() !== '') {
+      const rawQuery = searchQuery.trim();
+      const sanitized = rawQuery.replace(/[\s_,]/g, '');
+      const num = parseInt(sanitized, 10);
 
       list = list.filter((s) => {
-        const timeStr = s.avgQueryTimeMs.toString().toLowerCase();
-        const timeFull = `${s.avgQueryTimeMs} ms`.toLowerCase();
-        const timeFullRu = `${s.avgQueryTimeMs} мс`.toLowerCase();
-        
-        // Поиск по текстовому вхождению времени (например "0.28", "0.28 ms", "0.28 мс")
-        if (timeStr.includes(q) || timeFull.includes(q) || timeFullRu.includes(q)) {
+        const cardStr = s.cardinality.toString();
+        const formattedCard = s.cardinality.toLocaleString('ru-RU');
+
+        // Фильтрация по минимальной мощности (>= num) если введено число
+        if (!isNaN(num) && s.cardinality >= num) {
           return true;
         }
 
-        // Поиск по числовому значению (с погрешностью)
-        if (!isNaN(num)) {
-          return Math.abs(s.avgQueryTimeMs - num) < 0.05;
+        // Подстрочный поиск по значению cardinality
+        if (cardStr.includes(sanitized) || formattedCard.includes(rawQuery)) {
+          return true;
         }
 
         return false;
       });
     }
-    return list.map((item) => this.enrichOptimization(item));
+    return list.map((item) => this.enrichIndex(item));
   }
 
-  getFeedItem(id?: number, next?: boolean) {
-    const published = this.optimizations.filter((s) => s.status === 'published');
+  getFeedIndex(id?: number, next?: boolean) {
+    const published = this.indexes.filter((s) => s.status === 'published');
     if (published.length === 0) return null;
 
     let currentIndex = 0;
@@ -210,14 +224,14 @@ export class BmstuLabService {
     const nextItem = published[(currentIndex + 1) % published.length];
 
     return {
-      current: this.enrichOptimization(currentItem),
+      current: this.enrichIndex(currentItem),
       nextId: nextItem.id,
     };
   }
 
-  createOptimization(data: Partial<DatabaseIndexOptimization>) {
-    const newId = this.optimizations.length > 0 ? Math.max(...this.optimizations.map(s => s.id)) + 1 : 1;
-    const item: DatabaseIndexOptimization = {
+  createIndex(data: Partial<DatabaseIndexItem>) {
+    const newId = this.indexes.length > 0 ? Math.max(...this.indexes.map((s) => s.id)) + 1 : 1;
+    const item: DatabaseIndexItem = {
       id: newId,
       status: 'published',
       tableName: data.tableName || 'new_table',
@@ -234,7 +248,7 @@ export class BmstuLabService {
       videoKey: 'index_users_email.mp4',
       userLikes: [],
     };
-    this.optimizations.unshift(item);
-    return this.enrichOptimization(item);
+    this.indexes.unshift(item);
+    return this.enrichIndex(item);
   }
 }

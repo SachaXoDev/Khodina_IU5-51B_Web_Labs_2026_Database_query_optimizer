@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { BmstuLabModule } from './bmstu_lab/bmstu_lab.module';
+import { IndexesModule } from './indexes/indexes.module';
 
 @Module({
-  imports: [BmstuLabModule],
+  imports: [IndexesModule],
 })
 export class AppModule {}
 
