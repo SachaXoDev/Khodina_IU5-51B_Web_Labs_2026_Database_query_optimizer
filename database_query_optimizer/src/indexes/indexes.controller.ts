@@ -2,6 +2,14 @@ import { Controller, Get, Param, Post, Query, Render, Res } from '@nestjs/common
 import type { Response } from 'express';
 import { IndexesService } from './indexes.service';
 
+@Controller()
+export class AppRedirectController {
+  @Get()
+  rootRedirect(@Res() res: Response) {
+    return res.redirect('/database-indexes/feed');
+  }
+}
+
 @Controller('database-indexes')
 export class IndexesController {
   constructor(private readonly indexesService: IndexesService) {}

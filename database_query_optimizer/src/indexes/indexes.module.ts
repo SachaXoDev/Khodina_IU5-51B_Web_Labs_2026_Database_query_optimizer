@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { IndexesService } from './indexes.service';
-import { IndexesController } from './indexes.controller';
+import { IndexesController, AppRedirectController } from './indexes.controller';
 
 @Module({
-  controllers: [IndexesController],
+  controllers: [IndexesController, AppRedirectController],
   providers: [IndexesService],
   exports: [IndexesService],
 })

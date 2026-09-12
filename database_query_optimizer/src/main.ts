@@ -20,6 +20,6 @@ async function bootstrap() {
   // Регистрация хелпера для сравнения строк в HBS шаблонах
   hbs.registerHelper('eq', (a: any, b: any) => a === b);
 
-  await app.listen(process.env.PORT ?? 3010);
+  await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();

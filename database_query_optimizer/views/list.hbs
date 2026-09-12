@@ -28,58 +28,35 @@
     <main class="page-scrollable">
       <div class="content-padding">
         
-        <!-- Фильтрация по числовому полю Cardinality (Слайдер + Stepper со стрелками вверх/вниз) -->
-        <form action="/database-indexes/list" method="GET" class="filter-card">
-          <div class="filter-header-row">
-            <label for="num-query" class="filter-title-label">Мин. Cardinality (мощность):</label>
-            {{#if query}}
-              <a href="/database-indexes/list" class="filter-reset-link">Сбросить</a>
-            {{/if}}
-          </div>
-
-          <div class="filter-controls-row">
-            <!-- Числовой ввод со стрелочками вверх/вниз -->
-            <div class="stepper-box">
-              <input 
-                type="number" 
-                id="num-query" 
-                name="query" 
-                value="{{query}}" 
-                min="0" 
-                max="10000000" 
-                step="50000"
-                placeholder="0"
-                class="stepper-input"
-                oninput="syncSlider(this.value)"
-              />
-              <div class="stepper-arrows">
-                <button type="button" class="arrow-btn" onclick="stepCardinality(50000)" title="Увеличить">▲</button>
-                <button type="button" class="arrow-btn" onclick="stepCardinality(-50000)" title="Уменьшить">▼</button>
-              </div>
-            </div>
-
-            <button type="submit" class="btn-filter">Применить</button>
-          </div>
-
-          <!-- Ползунок-слайдер для удобного быстрого выбора диапазона -->
-          <div class="slider-wrapper">
+        <!-- Фильтрация / Поиск по Cardinality -->
+        <form action="/database-indexes/list" method="GET" class="search-form-row">
+          <div class="search-input-box">
             <input 
-              type="range" 
-              id="range-query" 
+              type="number" 
+              id="num-query" 
+              name="query" 
+              value="{{query}}" 
               min="0" 
               max="10000000" 
-              step="50000" 
-              value="{{#if query}}{{query}}{{else}}0{{/if}}"
-              class="range-slider"
-              oninput="syncInput(this.value)"
+              step="50000"
+              placeholder="Поиск по cardinality..."
+              class="search-input-field"
             />
-            <div class="range-labels">
-              <span>0</span>
-              <span>1M</span>
-              <span>5M</span>
-              <span>10M+</span>
+            <div class="search-stepper-arrows">
+              <button type="button" class="arrow-glyph" onclick="stepCardinality(50000)" title="Увеличить">
+                <svg width="10" height="9" viewBox="0 0 10 9" fill="currentColor">
+                  <path d="M5 0.5L9.5 8.5H0.5L5 0.5Z" />
+                </svg>
+              </button>
+              <button type="button" class="arrow-glyph" onclick="stepCardinality(-50000)" title="Уменьшить">
+                <svg width="10" height="9" viewBox="0 0 10 9" fill="currentColor">
+                  <path d="M5 8.5L0.5 0.5H9.5L5 8.5Z" />
+                </svg>
+              </button>
             </div>
           </div>
+
+          <button type="submit" class="btn-search-action">Найти</button>
         </form>
 
         <script>
@@ -88,17 +65,6 @@
             const currentVal = parseInt(input.value || '0', 10);
             const newVal = Math.max(0, Math.min(10000000, currentVal + step));
             input.value = newVal;
-            syncSlider(newVal);
-          }
-
-          function syncSlider(val) {
-            const range = document.getElementById('range-query');
-            if (range) range.value = val || 0;
-          }
-
-          function syncInput(val) {
-            const input = document.getElementById('num-query');
-            if (input) input.value = val;
           }
         </script>
 
