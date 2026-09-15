@@ -26,6 +26,9 @@ export interface PublishIndexDto {
 
 @Injectable()
 export class IndexesService implements OnModuleInit {
+  public static readonly DEFAULT_VIDEO_URL = 'http://localhost:9000/media/default_video.mp4';
+  public static readonly DEFAULT_IMAGE_URL = 'http://localhost:9000/media/default_index.svg';
+
   constructor(
     @InjectRepository(DatabaseIndex)
     private readonly indexRepository: Repository<DatabaseIndex>,
@@ -42,7 +45,6 @@ export class IndexesService implements OnModuleInit {
 
   /**
    * Метод автосидирования БД при старте.
-   * Обязательно создает 3 состояния: published, draft, deleted
    */
   async seedInitialData(forceReset: boolean = false) {
     if (forceReset) {
@@ -120,7 +122,7 @@ export class IndexesService implements OnModuleInit {
           author: defaultUser,
           publishedAt: new Date(),
         },
-        // 2. Черновик (status = DRAFT) - ровно 1 для пользователя по ТЗ
+        // 2. Черновик (status = DRAFT)
         {
           indexName: 'idx_analytics_event_date_draft',
           shortDescription: 'Черновик: Индекс для ускорения аналитических витрин реального времени.',
@@ -134,13 +136,13 @@ export class IndexesService implements OnModuleInit {
           estimatedCreationTimeSec: 15,
           recommendedWorkload: 'Analytics / OLAP',
           fullDescription: 'Черновик конфигурации индекса для ускорения дашбордов.',
-          imageUrl: '/assets/default_index.svg',
-          videoUrl: '/assets/default_video.mp4',
+          imageUrl: IndexesService.DEFAULT_IMAGE_URL,
+          videoUrl: IndexesService.DEFAULT_VIDEO_URL,
           likesCount: 0,
           author: defaultUser,
           publishedAt: null,
         },
-        // 3. Удаленная услуга (status = DELETED) по ТЗ
+        // 3. Удаленная услуга (status = DELETED)
         {
           indexName: 'idx_legacy_archive_deleted',
           shortDescription: 'Устаревший архивный индекс, выведенный из эксплуатации.',
@@ -154,8 +156,8 @@ export class IndexesService implements OnModuleInit {
           estimatedCreationTimeSec: 30,
           recommendedWorkload: 'Archived',
           fullDescription: 'Удаленная карточка оптимизации, недоступная для публичного просмотра.',
-          imageUrl: '/assets/default_index.svg',
-          videoUrl: '/assets/default_video.mp4',
+          imageUrl: IndexesService.DEFAULT_IMAGE_URL,
+          videoUrl: IndexesService.DEFAULT_VIDEO_URL,
           likesCount: 1,
           author: defaultUser,
           publishedAt: new Date(),
@@ -166,7 +168,6 @@ export class IndexesService implements OnModuleInit {
         const entity = this.indexRepository.create(item);
         const saved = await this.indexRepository.save(entity);
 
-        // Добавим связь лайка м-м для опубликованных с лайками > 0
         if (item.likesCount && item.likesCount > 0 && item.status === IndexStatus.PUBLISHED) {
           const like = this.likeRepository.create({
             userId: defaultUser.id,
@@ -258,7 +259,7 @@ export class IndexesService implements OnModuleInit {
   }
 
   /**
-   * 3. GET: Получить текущий черновик пользователя (не более 1 по ТЗ)
+   * 3. GET: Получить текущий черновик пользователя
    */
   async getUserDraft(userId: number = 1): Promise<DatabaseIndex | null> {
     return await this.indexRepository.findOne({
@@ -271,7 +272,7 @@ export class IndexesService implements OnModuleInit {
   }
 
   /**
-   * Поиск одного индекса по ID (с проверкой на deleted)
+   * Поиск одного индекса по ID
    */
   async findById(id: number): Promise<DatabaseIndex | null> {
     return await this.indexRepository.findOne({
@@ -281,7 +282,7 @@ export class IndexesService implements OnModuleInit {
   }
 
   /**
-   * 4. POST: Создание черновика через ORM (Кнопка «Далее»)
+   * 4. POST: Создание черновика через ORM
    */
   async createDraft(dto: CreateDraftDto, userId: number = 1): Promise<DatabaseIndex> {
     let draft = await this.getUserDraft(userId);
@@ -297,8 +298,8 @@ export class IndexesService implements OnModuleInit {
     draft = this.indexRepository.create({
       indexName: dto.indexName,
       status: IndexStatus.DRAFT,
-      imageUrl: dto.imageUrl || '/assets/default_index.svg',
-      videoUrl: dto.videoUrl || '/assets/default_video.mp4',
+      imageUrl: dto.imageUrl && dto.imageUrl.trim() !== '' ? dto.imageUrl : IndexesService.DEFAULT_IMAGE_URL,
+      videoUrl: dto.videoUrl && dto.videoUrl.trim() !== '' ? dto.videoUrl : IndexesService.DEFAULT_VIDEO_URL,
       shortDescription: '',
       tableName: 'users',
       indexType: 'B-Tree',
@@ -318,7 +319,7 @@ export class IndexesService implements OnModuleInit {
   }
 
   /**
-   * 5. POST: Публикация карточки через ORM (Кнопка «Опубликовать»)
+   * 5. POST: Публикация карточки через ORM
    */
   async publishDraft(id: number, dto: PublishIndexDto): Promise<DatabaseIndex> {
     const index = await this.indexRepository.findOne({ where: { id } });
@@ -328,6 +329,14 @@ export class IndexesService implements OnModuleInit {
 
     index.status = IndexStatus.PUBLISHED;
     index.publishedAt = new Date();
+    
+    if (!index.videoUrl || index.videoUrl.startsWith('/assets')) {
+      index.videoUrl = IndexesService.DEFAULT_VIDEO_URL;
+    }
+    if (!index.imageUrl || index.imageUrl.startsWith('/assets')) {
+      index.imageUrl = IndexesService.DEFAULT_IMAGE_URL;
+    }
+
     if (dto.indexName !== undefined) index.indexName = dto.indexName;
     if (dto.shortDescription !== undefined) index.shortDescription = dto.shortDescription;
     if (dto.tableName !== undefined) index.tableName = dto.tableName;
@@ -343,7 +352,7 @@ export class IndexesService implements OnModuleInit {
   }
 
   /**
-   * 6. POST: Логическое удаление услуги ЧЕРЕЗ ЧИСТЫЙ SQL UPDATE (без ORM по ТЗ)
+   * 6. POST: Логическое удаление услуги ЧЕРЕЗ ЧИСТЫЙ SQL UPDATE
    */
   async deleteBySql(id: number): Promise<void> {
     await this.dataSource.query(
