@@ -1,12 +1,32 @@
-version: '3.8'
-
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lab_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: database_optimizer_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  adminer:
+    image: adminer:latest
+    container_name: lab_adminer
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgres
+    restart: always
+
   minio:
     image: minio/minio:latest
     container_name: lab_minio
     ports:
       - "9000:9000" # API port (для подключения из кода)
-      - "9001:9001" # Web Console (для скриншотов и ручной загрузки)
+      - "9001:9001" # Web Console (для веб-интерфейса MinIO)
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadminpassword
@@ -16,4 +36,5 @@ services:
     restart: always
 
 volumes:
+  postgres_data:
   minio_data:

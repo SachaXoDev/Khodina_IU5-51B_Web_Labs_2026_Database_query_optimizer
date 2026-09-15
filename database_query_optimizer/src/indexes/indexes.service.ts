@@ -1,254 +1,354 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, DataSource } from 'typeorm';
+import { DatabaseIndex, IndexStatus } from './entities/database-index.entity';
+import { IndexLike } from './entities/index-like.entity';
+import { User } from '../users/entities/user.entity';
 
-export type IndexStatus = 'draft' | 'published' | 'deleted';
-
-export interface DatabaseIndexItem {
-  id: number;
-  status: IndexStatus;
-  tableName: string;
+export interface CreateDraftDto {
   indexName: string;
-  indexedColumn: string;
-  indexType: string;
-  totalRows: number;
-  cardinality: number;
-  selectivity: number;
-  avgQueryTimeMs: number;
-  description: string;
-  querySnippet?: string;
-  imageKey: string;
-  videoKey: string;
-  userLikes: number[];
+  imageUrl?: string;
+  videoUrl?: string;
+}
+
+export interface PublishIndexDto {
+  indexName?: string;
+  shortDescription?: string;
+  tableName?: string;
+  indexType?: string;
+  columnName?: string;
+  cardinality?: number;
+  scanCostReductionPercent?: number;
+  estimatedSpeedupFactor?: number;
+  estimatedCreationTimeSec?: number;
+  fullDescription?: string;
 }
 
 @Injectable()
-export class IndexesService {
-  private readonly minioBaseUrl = 'http://localhost:9000/media';
-  public readonly currentUserId = 101; // ID текущего авторизованного пользователя
+export class IndexesService implements OnModuleInit {
+  constructor(
+    @InjectRepository(DatabaseIndex)
+    private readonly indexRepository: Repository<DatabaseIndex>,
+    @InjectRepository(IndexLike)
+    private readonly likeRepository: Repository<IndexLike>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    private readonly dataSource: DataSource,
+  ) {}
 
-  private indexes: DatabaseIndexItem[] = [
-    {
-      id: 1,
-      status: 'published',
-      tableName: 'users',
-      indexName: 'idx_users_email',
-      indexedColumn: 'email',
-      indexType: 'B-tree',
-      totalRows: 1250000,
-      cardinality: 1000,
-      selectivity: 98.3,
-      avgQueryTimeMs: 0.28,
-      description: 'B-tree индекс по уникальным email пользователей. Обеспечивает мгновенный доступ к аккаунту и защищает базу данных от деградации при Seq Scan.',
-      querySnippet: 'SELECT * FROM users WHERE email = $1;',
-      imageKey: 'index_users_email.jpg',
-      videoKey: 'index_users_email.mp4',
-      userLikes: [101, 102, 105, 108, 112],
-    },
-    {
-      id: 2,
-      status: 'published',
-      tableName: 'orders',
-      indexName: 'idx_orders_status',
-      indexedColumn: 'status',
-      indexType: 'B-tree',
-      totalRows: 4500000,
-      cardinality: 3200000,
-      selectivity: 71.1,
-      avgQueryTimeMs: 0.35,
-      description: 'B-tree индекс по статусу оформления заказов в интернет-магазине. Оптимизирует выборки для очередей обработки и формирования оперативных отчетов складской логистики. Ускоряет фильтрацию заказов в статусах processing и pending.',
-      querySnippet: 'SELECT * FROM orders WHERE status = $1;',
-      imageKey: 'index_orders_created_at.jpg',
-      videoKey: 'index_orders_created_at.mp4',
-      userLikes: [101, 103, 104, 105, 106],
-    },
-    {
-      id: 3,
-      status: 'published',
-      tableName: 'metrics',
-      indexName: 'idx_perf_metrics',
-      indexedColumn: 'created_at',
-      indexType: 'B-tree',
-      totalRows: 850000,
-      cardinality: 845000,
-      selectivity: 99.4,
-      avgQueryTimeMs: 1.08,
-      description: 'Индекс по временным меткам создания метрик производительности. Обеспечивает мгновенный доступ к временным рядам и данным мониторинга за последние сутки без полного перебора партиций.',
-      querySnippet: 'SELECT * FROM metrics WHERE created_at >= $1;',
-      imageKey: 'index_products_sku.jpg',
-      videoKey: 'index_products_sku.mp4',
-      userLikes: [102, 104, 107, 109, 110],
-    },
-    {
-      id: 4,
-      status: 'published',
-      tableName: 'system_logs',
-      indexName: 'idx_logs_level',
-      indexedColumn: 'level',
-      indexType: 'B-tree',
-      totalRows: 15000000,
-      cardinality: 9500000,
-      selectivity: 63.3,
-      avgQueryTimeMs: 1.23,
-      description: 'Индекс по уровню логирования системы (ERROR, WARN, INFO, DEBUG). Критически важен для быстрого поиска сбоев и критических ошибок в высоконагруженных микросервисных кластерах.',
-      querySnippet: 'SELECT * FROM system_logs WHERE level = $1;',
-      imageKey: 'index_logs_timestamp.jpg',
-      videoKey: 'index_logs_timestamp.mp4',
-      userLikes: [101, 102, 103, 104, 106],
-    },
-    {
-      id: 5,
-      status: 'draft', // Единственный черновик в коллекции для экрана создания
-      tableName: 'users',
-      indexName: 'idx_users_email',
-      indexedColumn: 'email',
-      indexType: 'B-tree',
-      totalRows: 1250000,
-      cardinality: 1250000,
-      selectivity: 99.0,
-      avgQueryTimeMs: 0.28,
-      description: 'Оптимизация поиска по email, исключение Seq Scan',
-      querySnippet: 'SELECT * FROM table WHERE column = $1;',
-      imageKey: 'index_users_email.jpg',
-      videoKey: 'index_users_email.mp4',
-      userLikes: [],
-    },
-    {
-      id: 6,
-      status: 'deleted', // Удаленная запись (никогда не отображается в интерфейсе)
-      tableName: 'temp_archive',
-      indexName: 'idx_temp_archive_old',
-      indexedColumn: 'deleted_at',
-      indexType: 'B-tree',
-      totalRows: 50000,
-      cardinality: 45000,
-      selectivity: 90.0,
-      avgQueryTimeMs: 9.99,
-      description: 'Удаленный тестовый индекс.',
-      querySnippet: 'SELECT * FROM temp_archive;',
-      imageKey: 'index_logs_timestamp.jpg',
-      videoKey: 'index_logs_timestamp.mp4',
-      userLikes: [],
-    },
-  ];
+  async onModuleInit() {
+    await this.seedInitialData();
+  }
 
-  private formatCompactNumber(num: number): string {
-    if (num >= 1_000_000) {
-      const val = num / 1_000_000;
-      return `${Number(val.toFixed(2))}M`;
+  /**
+   * Метод автосидирования БД при старте.
+   * Обязательно создает 3 состояния: published, draft, deleted
+   */
+  async seedInitialData(forceReset: boolean = false) {
+    if (forceReset) {
+      await this.likeRepository.delete({});
+      await this.indexRepository.delete({});
     }
-    if (num >= 1_000) {
-      const val = num / 1_000;
-      return `${Number(val.toFixed(1))}K`;
-    }
-    return num.toString();
-  }
 
-  private enrichIndex(item: DatabaseIndexItem) {
-    const isLikedByMe = item.userLikes.includes(this.currentUserId);
-    return {
-      ...item,
-      likesCount: item.userLikes.length,
-      isLikedByMe,
-      imageUrl: `${this.minioBaseUrl}/${item.imageKey}`,
-      videoUrl: `${this.minioBaseUrl}/${item.videoKey}`,
-      formattedTotalRows: item.totalRows.toLocaleString('ru-RU'),
-      formattedCardinality: item.cardinality.toLocaleString('ru-RU'),
-      compactTotalRows: this.formatCompactNumber(item.totalRows),
-      compactCardinality: this.formatCompactNumber(item.cardinality),
-    };
-  }
-
-  toggleLike(id: number) {
-    const item = this.indexes.find((s) => s.id === id);
-    if (!item) return null;
-
-    const userIndex = item.userLikes.indexOf(this.currentUserId);
-    if (userIndex === -1) {
-      // Поставить лайк
-      item.userLikes.push(this.currentUserId);
-    } else {
-      // Убрать лайк
-      item.userLikes.splice(userIndex, 1);
-    }
-    return this.enrichIndex(item);
-  }
-
-  getDraftIndex() {
-    const draft = this.indexes.find((s) => s.status === 'draft');
-    return draft ? this.enrichIndex(draft) : null;
-  }
-
-  getPublishedIndexes(searchQuery?: string) {
-    let list = this.indexes.filter((s) => s.status === 'published');
-    if (searchQuery !== undefined && searchQuery !== null && searchQuery.trim() !== '') {
-      const rawQuery = searchQuery.trim();
-      const sanitized = rawQuery.replace(/[\s_,]/g, '');
-      const num = parseInt(sanitized, 10);
-
-      list = list.filter((s) => {
-        const cardStr = s.cardinality.toString();
-        const formattedCard = s.cardinality.toLocaleString('ru-RU');
-
-        // Фильтрация по минимальной мощности (>= num) если введено число
-        if (!isNaN(num) && s.cardinality >= num) {
-          return true;
-        }
-
-        // Подстрочный поиск по значению cardinality
-        if (cardStr.includes(sanitized) || formattedCard.includes(rawQuery)) {
-          return true;
-        }
-
-        return false;
+    let defaultUser = await this.userRepository.findOne({ where: { username: 'pg_expert' } });
+    if (!defaultUser) {
+      defaultUser = this.userRepository.create({
+        username: 'pg_expert',
+        role: 'admin',
       });
+      defaultUser = await this.userRepository.save(defaultUser);
     }
-    return list.map((item) => this.enrichIndex(item));
+
+    const indexesCount = await this.indexRepository.count();
+    if (indexesCount === 0) {
+      const initialIndexes: Partial<DatabaseIndex>[] = [
+        // 1. Опубликованные индексы (status = PUBLISHED)
+        {
+          indexName: 'idx_users_email_btree',
+          shortDescription: 'Ускоряет поиск пользователя по уникальному email при авторизации с миллисекунд до долей миллисекунды.',
+          status: IndexStatus.PUBLISHED,
+          tableName: 'users',
+          indexType: 'B-Tree',
+          columnName: 'email',
+          cardinality: 500000,
+          scanCostReductionPercent: 98.5,
+          estimatedSpeedupFactor: 45.0,
+          estimatedCreationTimeSec: 12,
+          recommendedWorkload: 'OLTP',
+          fullDescription: 'B-Tree индекс организует значения поля email в сбалансированное дерево поиска. Идеально подходит для операций точного совпадения (=) и поиска по диапазону (<, >, BETWEEN). Снижает время выполнения запросов SELECT * FROM users WHERE email = $1 с 350мс до 0.8мс.',
+          imageUrl: 'http://localhost:9000/media/index_users_email.jpg',
+          videoUrl: 'http://localhost:9000/media/index_users_email.mp4',
+          likesCount: 5,
+          author: defaultUser,
+          publishedAt: new Date(),
+        },
+        {
+          indexName: 'idx_orders_created_at_brin',
+          shortDescription: 'Компактный индекс диапазона блоков для аналитических запросов по дате в больших журналах заказов.',
+          status: IndexStatus.PUBLISHED,
+          tableName: 'orders',
+          indexType: 'BRIN',
+          columnName: 'created_at',
+          cardinality: 10000000,
+          scanCostReductionPercent: 92.0,
+          estimatedSpeedupFactor: 12.5,
+          estimatedCreationTimeSec: 4,
+          recommendedWorkload: 'OLAP / Time-Series',
+          fullDescription: 'BRIN (Block Range Index) хранит минимальные и максимальные значения для блоков страниц на диске. Занимает в сотни раз меньше памяти, чем B-Tree, и превосходно ускоряет выборки по временным срезам в таблицах с естественной сортировкой данных.',
+          imageUrl: 'http://localhost:9000/media/index_orders_created_at.jpg',
+          videoUrl: 'http://localhost:9000/media/index_orders_created_at.mp4',
+          likesCount: 12,
+          author: defaultUser,
+          publishedAt: new Date(),
+        },
+        {
+          indexName: 'idx_products_sku_hash',
+          shortDescription: 'Обобщенный инвертированный индекс для мгновенного поиска по артикулу и атрибутам каталога.',
+          status: IndexStatus.PUBLISHED,
+          tableName: 'products',
+          indexType: 'Hash',
+          columnName: 'sku',
+          cardinality: 150000,
+          scanCostReductionPercent: 95.0,
+          estimatedSpeedupFactor: 28.0,
+          estimatedCreationTimeSec: 25,
+          recommendedWorkload: 'E-commerce Search',
+          fullDescription: 'Хеш-индекс оптимизирован исключительно для операций строгого равенства (=). Позволяет мгновенно находить товары по точному артикулу SKU без лишней нагрузки на страницы дерева.',
+          imageUrl: 'http://localhost:9000/media/index_products_sku.jpg',
+          videoUrl: 'http://localhost:9000/media/index_products_sku.mp4',
+          likesCount: 8,
+          author: defaultUser,
+          publishedAt: new Date(),
+        },
+        // 2. Черновик (status = DRAFT) - ровно 1 для пользователя по ТЗ
+        {
+          indexName: 'idx_analytics_event_date_draft',
+          shortDescription: 'Черновик: Индекс для ускорения аналитических витрин реального времени.',
+          status: IndexStatus.DRAFT,
+          tableName: 'analytics_events',
+          indexType: 'B-Tree',
+          columnName: 'event_time',
+          cardinality: 2500000,
+          scanCostReductionPercent: 94.0,
+          estimatedSpeedupFactor: 22.0,
+          estimatedCreationTimeSec: 15,
+          recommendedWorkload: 'Analytics / OLAP',
+          fullDescription: 'Черновик конфигурации индекса для ускорения дашбордов.',
+          imageUrl: '/assets/default_index.svg',
+          videoUrl: '/assets/default_video.mp4',
+          likesCount: 0,
+          author: defaultUser,
+          publishedAt: null,
+        },
+        // 3. Удаленная услуга (status = DELETED) по ТЗ
+        {
+          indexName: 'idx_legacy_archive_deleted',
+          shortDescription: 'Устаревший архивный индекс, выведенный из эксплуатации.',
+          status: IndexStatus.DELETED,
+          tableName: 'legacy_logs',
+          indexType: 'GiST',
+          columnName: 'archived_payload',
+          cardinality: 400000,
+          scanCostReductionPercent: 60.0,
+          estimatedSpeedupFactor: 5.0,
+          estimatedCreationTimeSec: 30,
+          recommendedWorkload: 'Archived',
+          fullDescription: 'Удаленная карточка оптимизации, недоступная для публичного просмотра.',
+          imageUrl: '/assets/default_index.svg',
+          videoUrl: '/assets/default_video.mp4',
+          likesCount: 1,
+          author: defaultUser,
+          publishedAt: new Date(),
+        },
+      ];
+
+      for (const item of initialIndexes) {
+        const entity = this.indexRepository.create(item);
+        const saved = await this.indexRepository.save(entity);
+
+        // Добавим связь лайка м-м для опубликованных с лайками > 0
+        if (item.likesCount && item.likesCount > 0 && item.status === IndexStatus.PUBLISHED) {
+          const like = this.likeRepository.create({
+            userId: defaultUser.id,
+            indexId: saved.id,
+          });
+          await this.likeRepository.save(like);
+        }
+      }
+    }
   }
 
-  getFeedIndex(id?: number, next?: boolean) {
-    const published = this.indexes.filter((s) => s.status === 'published');
-    if (published.length === 0) return null;
+  /**
+   * 1. GET: Лента опубликованных индексов (Feed) через ORM
+   */
+  async getFeedIndex(currentId?: number, isNext: boolean = true) {
+    const all = await this.indexRepository.find({
+      where: { status: IndexStatus.PUBLISHED },
+      order: { id: 'ASC' },
+      relations: { author: true, likes: true },
+    });
+
+    if (!all || all.length === 0) {
+      return {
+        current: null,
+        prevId: null,
+        nextId: null,
+        hasPrev: false,
+        hasNext: false,
+      };
+    }
 
     let currentIndex = 0;
-    if (id !== undefined && !isNaN(id)) {
-      const foundIdx = published.findIndex((s) => s.id === id);
-      if (foundIdx !== -1) {
-        currentIndex = foundIdx;
+    if (currentId !== undefined) {
+      const idx = all.findIndex((item) => item.id === currentId);
+      if (idx !== -1) {
+        if (isNext) {
+          currentIndex = (idx + 1) % all.length;
+        } else {
+          currentIndex = idx;
+        }
       }
     }
 
-    if (next) {
-      currentIndex = (currentIndex + 1) % published.length;
-    }
-
-    const currentItem = published[currentIndex];
-    const nextItem = published[(currentIndex + 1) % published.length];
+    const current = all[currentIndex];
+    const prevId = currentIndex > 0 ? all[currentIndex - 1].id : all[all.length - 1].id;
+    const nextId = currentIndex < all.length - 1 ? all[currentIndex + 1].id : all[0].id;
 
     return {
-      current: this.enrichIndex(currentItem),
-      nextId: nextItem.id,
+      current,
+      prevId,
+      nextId,
+      hasPrev: true,
+      hasNext: true,
     };
   }
 
-  createIndex(data: Partial<DatabaseIndexItem>) {
-    const newId = this.indexes.length > 0 ? Math.max(...this.indexes.map((s) => s.id)) + 1 : 1;
-    const item: DatabaseIndexItem = {
-      id: newId,
-      status: 'published',
-      tableName: data.tableName || 'new_table',
-      indexName: data.indexName || `idx_${data.tableName || 'table'}_${data.indexedColumn || 'col'}`,
-      indexedColumn: data.indexedColumn || 'id',
-      indexType: data.indexType || 'B-tree',
-      totalRows: Number(data.totalRows) || 100000,
-      cardinality: Number(data.cardinality) || 95000,
-      selectivity: Number(data.selectivity) || 95.0,
-      avgQueryTimeMs: Number(data.avgQueryTimeMs) || 1.0,
-      description: data.description || 'Новый созданный индекс.',
-      querySnippet: data.querySnippet || 'SELECT * FROM table;',
-      imageKey: 'index_users_email.jpg',
-      videoKey: 'index_users_email.mp4',
-      userLikes: [],
-    };
-    this.indexes.unshift(item);
-    return this.enrichIndex(item);
+  /**
+   * 2. GET: Каталог опубликованных индексов с фильтрацией через ORM
+   */
+  async findAll(params?: {
+    search?: string;
+    indexType?: string;
+    minCardinality?: number;
+  }): Promise<DatabaseIndex[]> {
+    const qb = this.indexRepository
+      .createQueryBuilder('index')
+      .leftJoinAndSelect('index.author', 'author')
+      .leftJoinAndSelect('index.likes', 'likes')
+      .where('index.status = :status', { status: IndexStatus.PUBLISHED })
+      .orderBy('index.id', 'ASC');
+
+    if (params?.search && params.search.trim() !== '') {
+      const term = `%${params.search.trim().toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(index.indexName) LIKE :term OR LOWER(index.tableName) LIKE :term OR LOWER(index.columnName) LIKE :term OR LOWER(index.shortDescription) LIKE :term)',
+        { term },
+      );
+    }
+
+    if (params?.indexType && params.indexType !== 'Все типы' && params.indexType.trim() !== '') {
+      qb.andWhere('index.indexType = :indexType', { indexType: params.indexType.trim() });
+    }
+
+    if (params?.minCardinality !== undefined && !isNaN(params.minCardinality)) {
+      qb.andWhere('index.cardinality = :minCardinality', { minCardinality: params.minCardinality });
+    }
+
+    return await qb.getMany();
+  }
+
+  /**
+   * 3. GET: Получить текущий черновик пользователя (не более 1 по ТЗ)
+   */
+  async getUserDraft(userId: number = 1): Promise<DatabaseIndex | null> {
+    return await this.indexRepository.findOne({
+      where: {
+        status: IndexStatus.DRAFT,
+        authorId: userId,
+      },
+      relations: { author: true },
+    });
+  }
+
+  /**
+   * Поиск одного индекса по ID (с проверкой на deleted)
+   */
+  async findById(id: number): Promise<DatabaseIndex | null> {
+    return await this.indexRepository.findOne({
+      where: { id },
+      relations: { author: true, likes: true },
+    });
+  }
+
+  /**
+   * 4. POST: Создание черновика через ORM (Кнопка «Далее»)
+   */
+  async createDraft(dto: CreateDraftDto, userId: number = 1): Promise<DatabaseIndex> {
+    let draft = await this.getUserDraft(userId);
+    if (draft) {
+      draft.indexName = dto.indexName;
+      if (dto.imageUrl) draft.imageUrl = dto.imageUrl;
+      if (dto.videoUrl) draft.videoUrl = dto.videoUrl;
+      return await this.indexRepository.save(draft);
+    }
+
+    const author = await this.userRepository.findOne({ where: { id: userId } });
+
+    draft = this.indexRepository.create({
+      indexName: dto.indexName,
+      status: IndexStatus.DRAFT,
+      imageUrl: dto.imageUrl || '/assets/default_index.svg',
+      videoUrl: dto.videoUrl || '/assets/default_video.mp4',
+      shortDescription: '',
+      tableName: 'users',
+      indexType: 'B-Tree',
+      columnName: 'id',
+      cardinality: 100000,
+      scanCostReductionPercent: 90.0,
+      estimatedSpeedupFactor: 10.0,
+      estimatedCreationTimeSec: 5,
+      recommendedWorkload: 'OLTP',
+      fullDescription: '',
+      likesCount: 0,
+      author: author || undefined,
+      publishedAt: null,
+    });
+
+    return await this.indexRepository.save(draft);
+  }
+
+  /**
+   * 5. POST: Публикация карточки через ORM (Кнопка «Опубликовать»)
+   */
+  async publishDraft(id: number, dto: PublishIndexDto): Promise<DatabaseIndex> {
+    const index = await this.indexRepository.findOne({ where: { id } });
+    if (!index) {
+      throw new Error(`Index with ID ${id} not found`);
+    }
+
+    index.status = IndexStatus.PUBLISHED;
+    index.publishedAt = new Date();
+    if (dto.indexName !== undefined) index.indexName = dto.indexName;
+    if (dto.shortDescription !== undefined) index.shortDescription = dto.shortDescription;
+    if (dto.tableName !== undefined) index.tableName = dto.tableName;
+    if (dto.indexType !== undefined) index.indexType = dto.indexType;
+    if (dto.columnName !== undefined) index.columnName = dto.columnName;
+    if (dto.cardinality !== undefined) index.cardinality = Number(dto.cardinality);
+    if (dto.scanCostReductionPercent !== undefined) index.scanCostReductionPercent = Number(dto.scanCostReductionPercent);
+    if (dto.estimatedSpeedupFactor !== undefined) index.estimatedSpeedupFactor = Number(dto.estimatedSpeedupFactor);
+    if (dto.estimatedCreationTimeSec !== undefined) index.estimatedCreationTimeSec = Number(dto.estimatedCreationTimeSec);
+    if (dto.fullDescription !== undefined) index.fullDescription = dto.fullDescription;
+
+    return await this.indexRepository.save(index);
+  }
+
+  /**
+   * 6. POST: Логическое удаление услуги ЧЕРЕЗ ЧИСТЫЙ SQL UPDATE (без ORM по ТЗ)
+   */
+  async deleteBySql(id: number): Promise<void> {
+    await this.dataSource.query(
+      `UPDATE database_indexes SET status = 'deleted' WHERE id = $1`,
+      [id],
+    );
   }
 }

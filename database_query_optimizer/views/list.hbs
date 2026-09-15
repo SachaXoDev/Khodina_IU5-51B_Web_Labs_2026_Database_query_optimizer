@@ -8,6 +8,42 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@700;800&family=Geist+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Кнопка логического удаления карточки */
+    .tile-delete-btn {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: rgba(18, 19, 24, 0.85);
+      border: 1px solid rgba(255, 60, 60, 0.4);
+      border-radius: 6px;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #ff5c5c;
+      transition: all 0.15s ease;
+      z-index: 5;
+    }
+    .tile-delete-btn:hover {
+      background: #ff3b30;
+      color: #ffffff;
+      border-color: #ff3b30;
+      transform: scale(1.1);
+    }
+    .tile-card-wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .tile-card-wrapper .tile-card {
+      height: 100%;
+      flex: 1;
+    }
+  </style>
 </head>
 <body>
 
@@ -27,7 +63,7 @@
     <!-- Основной контент каталога -->
     <main class="page-scrollable">
       <div class="content-padding">
-        
+
         <!-- Фильтрация / Поиск по Cardinality -->
         <form action="/database-indexes/list" method="GET" class="search-form-row">
           <div class="search-input-box">
@@ -68,42 +104,54 @@
           }
         </script>
 
-        <!-- Плитка в 2 столбца -->
+        <!-- Плитка в 2 столбца (Только опубликованные услуги) -->
         <div class="index-grid-2col">
           {{#each data}}
-            <a href="/database-indexes/feed?id={{this.id}}" class="tile-card">
-              <!-- Изображение -->
-              <div class="tile-image-wrapper">
-                <img src="{{this.imageUrl}}" alt="{{this.indexName}}" class="tile-image" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\' viewBox=\'0 0 200 200\'><rect fill=\'%2317181c\' width=\'200\' height=\'200\'/><text fill=\'%231fdc6f\' font-family=\'monospace\' font-size=\'11\' x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\'>B-Tree</text></svg>';">
-                
-                <!-- Количество лайков (динамическое состояние) -->
-                {{#if this.isLikedByMe}}
-                  <div class="tile-likes-badge liked">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="#1ee46a" stroke="#1ee46a" stroke-width="2">
-                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                    </svg>
-                    <span>{{this.likesCount}}</span>
-                  </div>
-                {{else}}
-                  <div class="tile-likes-badge unliked">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2">
-                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                    </svg>
-                    <span>{{this.likesCount}}</span>
-                  </div>
-                {{/if}}
-              </div>
+            <div class="tile-card-wrapper">
+              <!-- Кнопка логического удаления через чистый SQL UPDATE по ТЗ -->
+              <form action="/database-indexes/{{this.id}}/delete" method="POST" onsubmit="return confirm('Логически удалить услугу {{this.indexName}}?');">
+                <button type="submit" class="tile-delete-btn" title="Логически удалить услугу (SQL UPDATE)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </form>
 
-              <!-- Название -->
-              <div class="tile-info">
-                <h3 class="tile-title" title="{{this.indexName}}">{{this.indexName}}</h3>
-                <span class="tile-subtitle">{{this.tableName}}.{{this.indexedColumn}}</span>
-                <span class="tile-time">Cardinality: {{this.formattedCardinality}}</span>
-              </div>
-            </a>
+              <a href="/database-indexes/feed?id={{this.id}}" class="tile-card">
+                <!-- Изображение -->
+                <div class="tile-image-wrapper">
+                  <img src="{{this.imageUrl}}" alt="{{this.indexName}}" class="tile-image" onerror="this.onerror=null; this.src='/assets/default_index.svg';">
+                  
+                  <!-- Количество лайков (из БД) -->
+                  {{#if this.isLikedByMe}}
+                    <div class="tile-likes-badge liked">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="#1ee46a" stroke="#1ee46a" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                      </svg>
+                      <span>{{this.likesCount}}</span>
+                    </div>
+                  {{else}}
+                    <div class="tile-likes-badge unliked">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                      </svg>
+                      <span>{{this.likesCount}}</span>
+                    </div>
+                  {{/if}}
+                </div>
+
+                <!-- Название -->
+                <div class="tile-info">
+                  <h3 class="tile-title" title="{{this.indexName}}">{{this.indexName}}</h3>
+                  <span class="tile-subtitle">{{this.tableName}}.{{this.indexedColumn}}</span>
+                  <span class="tile-time">Cardinality: {{this.formattedCardinality}}</span>
+                </div>
+              </a>
+            </div>
           {{else}}
             <div class="empty-state-box" style="grid-column: span 2;">
-              <p>Индексы по запросу не найдены.</p>
+              <p>Опубликованные индексы по запросу не найдены.</p>
               <a href="/database-indexes/list" class="btn-link-reset">Сбросить фильтр</a>
             </div>
           {{/each}}

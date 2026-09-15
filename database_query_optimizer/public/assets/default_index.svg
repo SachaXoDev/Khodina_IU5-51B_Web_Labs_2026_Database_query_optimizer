@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect fill="#121318" width="400" height="300" rx="12"/>
+  <rect x="20" y="20" width="360" height="260" rx="8" fill="#17181c" stroke="#24262e" stroke-width="2"/>
+  <circle cx="200" cy="120" r="45" fill="#1f222a" stroke="#1fdc6f" stroke-width="3"/>
+  <path d="M175 185 L200 150 L225 185" stroke="#1fdc6f" stroke-width="3" fill="none"/>
+  <text fill="#ffffff" font-family="'Geist Mono', monospace" font-size="16" font-weight="bold" x="50%" y="225" dominant-baseline="middle" text-anchor="middle">DATABASE INDEX</text>
+  <text fill="#7e8494" font-family="'Geist Mono', monospace" font-size="12" x="50%" y="248" dominant-baseline="middle" text-anchor="middle">DEFAULT SSR PREVIEW</text>
+</svg>
