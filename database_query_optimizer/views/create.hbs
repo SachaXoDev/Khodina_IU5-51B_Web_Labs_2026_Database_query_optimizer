@@ -93,12 +93,12 @@
                 <input type="text" id="indexedColumn" name="indexedColumn" class="figma-input font-mono" placeholder="email" value="{{draft.indexedColumn}}" required />
               </div>
               <div class="figma-field-item">
-                <label for="avgQueryTimeMs" class="figma-field-label">Время выполнения (мс)</label>
-                <input type="text" id="avgQueryTimeMs" name="avgQueryTimeMs" class="figma-input font-mono" placeholder="0.28" value="{{draft.avgQueryTimeMs}}" />
+                <label for="totalRows" class="figma-field-label">Строки в таблице</label>
+                <input type="text" id="totalRows" name="totalRows" class="figma-input font-mono" placeholder="1 250 000" value="{{draft.formattedTotalRows}}" />
               </div>
               <div class="figma-field-item">
                 <label for="cardinality" class="figma-field-label">Cardinality</label>
-                <input type="text" id="cardinality" name="cardinality" class="figma-input font-mono" placeholder="1 250 000" value="{{draft.formattedCardinality}}" />
+                <input type="text" id="cardinality" name="cardinality" class="figma-input font-mono" placeholder="1 000" value="{{draft.formattedCardinality}}" />
               </div>
             </div>
           </div>
