@@ -267,17 +267,54 @@ html, body {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Боковая панель действий Vibes (справа) */
+/* Боковая панель действий и параметров Vibes (справа) */
 .vibes-sidebar-actions {
   position: absolute;
   right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
+  bottom: 50px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
   z-index: 5;
+}
+
+.vibes-sidebar-actions .vibes-side-metric {
+  margin-top: 4px;
+}
+
+.vibes-side-metric {
+  background: rgba(18, 20, 26, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 60px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+.side-metric-label {
+  font-size: 8.5px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.side-metric-val {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: #1fdc6f;
+  line-height: 1.1;
+  letter-spacing: -0.2px;
 }
 
 .vibes-action-btn {
@@ -344,7 +381,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: 82%; /* Оставляет место под боковые кнопки */
+  max-width: 76%; /* Оставляет комфортный отступ до правого блока кнопок и параметров */
 }
 
 .vibes-tags-row {
@@ -547,12 +584,63 @@ html, body {
 /* ==========================================================================
    Страница 2: Каталог (List) - Поиск / Фильтрация
    ========================================================================== */
+.filter-cardinality-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
 .search-form-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
   width: 100%;
+}
+
+.slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.cardinality-range-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 4px;
+  background: #232730;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.cardinality-range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #1fdc6f;
+  border: 2px solid #0d0e11;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(31, 220, 111, 0.6);
+  transition: transform 0.15s ease;
+}
+
+.cardinality-range-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.slider-scale-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 600;
+  color: #6e7681;
+  padding: 0 2px;
 }
 
 .search-input-box {
@@ -568,7 +656,7 @@ html, body {
   background-color: #0d0e11;
   border: 1px solid #23262d;
   color: #f0f6fc;
-  padding: 0 40px 0 16px;
+  padding: 0 16px;
   border-radius: 12px;
   font-family: var(--font-sans);
   font-size: 14px;
@@ -944,8 +1032,8 @@ html, body {
 }
 
 .figma-media-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 

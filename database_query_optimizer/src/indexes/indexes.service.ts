@@ -26,8 +26,8 @@ export interface PublishIndexDto {
 
 @Injectable()
 export class IndexesService implements OnModuleInit {
-  public static readonly DEFAULT_VIDEO_URL = 'http://localhost:9000/media/default_video.mp4';
-  public static readonly DEFAULT_IMAGE_URL = 'http://localhost:9000/media/default_index.svg';
+  public static readonly DEFAULT_VIDEO_URL = '/assets/default_video.mp4';
+  public static readonly DEFAULT_IMAGE_URL = '/assets/default_index.svg';
 
   constructor(
     @InjectRepository(DatabaseIndex)
@@ -78,8 +78,8 @@ export class IndexesService implements OnModuleInit {
           estimatedCreationTimeSec: 12,
           recommendedWorkload: 'OLTP',
           fullDescription: 'B-Tree индекс организует значения поля email в сбалансированное дерево поиска. Идеально подходит для операций точного совпадения (=) и поиска по диапазону (<, >, BETWEEN). Снижает время выполнения запросов SELECT * FROM users WHERE email = $1 с 350мс до 0.8мс.',
-          imageUrl: 'http://localhost:9000/media/index_users_email.jpg',
-          videoUrl: 'http://localhost:9000/media/index_users_email.mp4',
+          imageUrl: '/media/index_users_email.jpg',
+          videoUrl: '/media/index_users_email.mp4',
           likesCount: 5,
           author: defaultUser,
           publishedAt: new Date(),
@@ -97,8 +97,8 @@ export class IndexesService implements OnModuleInit {
           estimatedCreationTimeSec: 4,
           recommendedWorkload: 'OLAP / Time-Series',
           fullDescription: 'BRIN (Block Range Index) хранит минимальные и максимальные значения для блоков страниц на диске. Занимает в сотни раз меньше памяти, чем B-Tree, и превосходно ускоряет выборки по временным срезам в таблицах с естественной сортировкой данных.',
-          imageUrl: 'http://localhost:9000/media/index_orders_created_at.jpg',
-          videoUrl: 'http://localhost:9000/media/index_orders_created_at.mp4',
+          imageUrl: '/media/index_orders_created_at.jpg',
+          videoUrl: '/media/index_orders_created_at.mp4',
           likesCount: 12,
           author: defaultUser,
           publishedAt: new Date(),
@@ -116,8 +116,8 @@ export class IndexesService implements OnModuleInit {
           estimatedCreationTimeSec: 25,
           recommendedWorkload: 'E-commerce Search',
           fullDescription: 'Хеш-индекс оптимизирован исключительно для операций строгого равенства (=). Позволяет мгновенно находить товары по точному артикулу SKU без лишней нагрузки на страницы дерева.',
-          imageUrl: 'http://localhost:9000/media/index_products_sku.jpg',
-          videoUrl: 'http://localhost:9000/media/index_products_sku.mp4',
+          imageUrl: '/media/index_products_sku.jpg',
+          videoUrl: '/media/index_products_sku.mp4',
           likesCount: 8,
           author: defaultUser,
           publishedAt: new Date(),
@@ -352,12 +352,46 @@ export class IndexesService implements OnModuleInit {
   }
 
   /**
-   * 6. POST: Логическое удаление услуги ЧЕРЕЗ ЧИСТЫЙ SQL UPDATE
+   * 6. POST: Логическое удаление услуги ЧЕРЕЗ SQL КУРCОР (WHERE CURRENT OF)
+   */
+  async deleteByCursor(id: number): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // 1. Объявляем SQL курсор с блокировкой FOR UPDATE
+      await queryRunner.query(
+        `DECLARE del_cursor CURSOR FOR 
+         SELECT id, status FROM database_indexes WHERE id = $1 FOR UPDATE`,
+        [id],
+      );
+
+      // 2. Позиционируем курсор на выбранную запись
+      await queryRunner.query(`FETCH NEXT FROM del_cursor`);
+
+      // 3. Логическое удаление через позиционированный UPDATE по курсору
+      await queryRunner.query(
+        `UPDATE database_indexes SET status = 'deleted' WHERE CURRENT OF del_cursor`,
+      );
+
+      // 4. Закрываем курсор
+      await queryRunner.query(`CLOSE del_cursor`);
+
+      // 5. Фиксируем транзакцию
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /**
+   * Обычное удаление через прямой SQL UPDATE (для совместимости)
    */
   async deleteBySql(id: number): Promise<void> {
-    await this.dataSource.query(
-      `UPDATE database_indexes SET status = 'deleted' WHERE id = $1`,
-      [id],
-    );
+    await this.deleteByCursor(id);
   }
 }

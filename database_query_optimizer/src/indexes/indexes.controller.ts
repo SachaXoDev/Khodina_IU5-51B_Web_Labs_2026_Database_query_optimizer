@@ -157,14 +157,14 @@ export class IndexesController {
   }
 
   /**
-   * 6. POST: Логическое удаление услуги ЧЕРЕЗ SQL UPDATE (без ORM)
+   * 6. POST: Логическое удаление услуги ЧЕРЕЗ SQL КУРСОР (WHERE CURRENT OF)
    */
   @Post(':id/delete')
   async deleteIndex(
     @Param('id', ParseIntPipe) id: number,
     @Res() res: Response,
   ) {
-    await this.indexesService.deleteBySql(id);
+    await this.indexesService.deleteByCursor(id);
     return res.redirect('/database-indexes/list');
   }
 }

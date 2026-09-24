@@ -41,7 +41,7 @@
         </div>
       </div>
 
-      <!-- Боковая панель действий Vibes (справа) -->
+      <!-- Боковая панель действий и параметров Vibes (справа) -->
       <div class="vibes-sidebar-actions">
         <!-- Отображение количества лайков из БД -->
         <div class="vibes-action-btn" title="Лайки">
@@ -65,6 +65,19 @@
             <span class="action-count next-label">Далее</span>
           </a>
         {{/if}}
+
+        <!-- Параметры ниже лайка и кнопки вниз (только 2 параметра по теме) -->
+        <!-- Параметр 1: CARDINALITY (по теме варианта) -->
+        <div class="vibes-side-metric" title="Мощность индекса (Cardinality)">
+          <span class="side-metric-label">CARDINALITY</span>
+          <span class="side-metric-val">{{data.cardinality}}</span>
+        </div>
+
+        <!-- Параметр 2: КОЛ-ВО СТРОК (по теме варианта) -->
+        <div class="vibes-side-metric" title="Количество строк в таблице">
+          <span class="side-metric-label">СТРОК</span>
+          <span class="side-metric-val">{{data.compactTotalRows}}</span>
+        </div>
       </div>
 
       <!-- Нижний информационный оверлей Vibes (прямо поверх видео) -->
@@ -90,22 +103,6 @@
             <span class="txt-more">больше</span>
             <span class="txt-less">меньше</span>
           </label>
-        </div>
-
-        <!-- Метрики производительности -->
-        <div class="vibes-metrics-grid">
-          <div class="vibes-metric-card">
-            <span class="metric-card-label">ВРЕМЯ</span>
-            <span class="metric-card-val">{{data.avgQueryTimeMs}} ms</span>
-          </div>
-          <div class="vibes-metric-card">
-            <span class="metric-card-label">CARDINALITY</span>
-            <span class="metric-card-val">{{data.cardinality}}</span>
-          </div>
-          <div class="vibes-metric-card">
-            <span class="metric-card-label">КОЛ-ВО СТРОК</span>
-            <span class="metric-card-val">{{data.compactTotalRows}}</span>
-          </div>
         </div>
       </div>
 
