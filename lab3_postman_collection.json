@@ -1,0 +1,230 @@
+{
+  "info": {
+    "_postman_id": "lab3-web-service-collection",
+    "name": "Lab 3 - Database Indexes Web Service",
+    "description": "Коллекция из 10 обязательных запросов для демонстрации лабораторной работы №3",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01. GET Список услуг (с фильтром)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/indexes?search=email&indexType=B-Tree",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "indexes"],
+          "query": [
+            { "key": "search", "value": "email" },
+            { "key": "indexType", "value": "B-Tree" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "02. POST Добавить новую услугу с картинкой и видео",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "indexName", "value": "idx_test_orders_status", "type": "text" },
+            { "key": "shortDescription", "value": "Тестовый индекс для заказов", "type": "text" },
+            { "key": "tableName", "value": "orders", "type": "text" },
+            { "key": "indexType", "value": "B-Tree", "type": "text" },
+            { "key": "columnName", "value": "status", "type": "text" },
+            { "key": "cardinality", "value": "300000", "type": "text" },
+            { "key": "fullDescription", "value": "Полное описание тестового индекса", "type": "text" },
+            { "key": "image", "type": "file", "src": "database_query_optimizer/public/media/index_orders_created_at.jpg" },
+            { "key": "video", "type": "file", "src": "database_query_optimizer/public/media/index_orders_created_at.mp4" }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/indexes",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "indexes"]
+        }
+      }
+    },
+    {
+      "name": "03. GET Получить поля черновика",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/indexes/draft",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "indexes", "draft"]
+        }
+      }
+    },
+    {
+      "name": "04. PUT Опубликовать услугу",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"shortDescription\": \"Опубликованный оптимизированный индекс статусов\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/indexes/10/publish",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "indexes", "10", "publish"]
+        }
+      }
+    },
+    {
+      "name": "05. GET Получить ленту без ид",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/indexes/feed",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "indexes", "feed"]
+        }
+      }
+    },
+    {
+      "name": "06. GET Получить ленту по ид ?next=true",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/indexes/feed?id=1&next=true",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "indexes", "feed"],
+          "query": [
+            { "key": "id", "value": "1" },
+            { "key": "next", "value": "true" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "07. POST Поставить лайк",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"value\": 1\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/indexes/1/like",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "indexes", "1", "like"]
+        }
+      }
+    },
+    {
+      "name": "08. POST Отменить лайк (0 отменяет лайк)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"value\": 0\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/indexes/1/like",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "indexes", "1", "like"]
+        }
+      }
+    },
+    {
+      "name": "09. DELETE Удалить услугу (soft delete)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/indexes/10",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "indexes", "10"]
+        }
+      }
+    },
+    {
+      "name": "10. POST Зарегистрировать нового пользователя",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"dba_teamlead\",\n  \"password\": \"strongPass123!\",\n  \"role\": \"user\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/users/register",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "users", "register"]
+        }
+      }
+    },
+    {
+      "name": "11. POST Аутентификация (заглушка для лабы 4)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"dba_teamlead\",\n  \"password\": \"strongPass123!\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/users/login",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "users", "login"]
+        }
+      }
+    },
+    {
+      "name": "12. POST Деавторизация (заглушка для лабы 4)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/users/logout",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "users", "logout"]
+        }
+      }
+    }
+  ]
+}

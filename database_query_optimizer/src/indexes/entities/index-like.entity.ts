@@ -5,7 +5,6 @@ import {
   ManyToOne,
   JoinColumn,
   Unique,
-  CreateDateColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { DatabaseIndex } from './database-index.entity';
@@ -13,6 +12,7 @@ import { DatabaseIndex } from './database-index.entity';
 @Entity('index_likes')
 @Unique(['userId', 'indexId'])
 export class IndexLike {
+  // Отдельный первичный ключ в м-м таблице связей по замечанию преподавателя
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -30,7 +30,5 @@ export class IndexLike {
   @ManyToOne(() => DatabaseIndex, (index) => index.likes, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'index_id' })
   index: DatabaseIndex;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  // created_at убран по замечанию преподавателя
 }

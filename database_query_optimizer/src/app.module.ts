@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { IndexesModule } from './indexes/indexes.module';
+import { UsersModule } from './users/users.module';
 import { DatabaseIndex } from './indexes/entities/database-index.entity';
 import { IndexLike } from './indexes/entities/index-like.entity';
 import { User } from './users/entities/user.entity';
@@ -23,10 +24,12 @@ import { User } from './users/entities/user.entity';
         password: config.get<string>('DB_PASSWORD', 'postgrespassword'),
         database: config.get<string>('DB_DATABASE', 'database_optimizer_db'),
         entities: [DatabaseIndex, IndexLike, User],
-        synchronize: true, // Автоматически создает/синхронизирует таблицы в БД
+        synchronize: config.get<string>('DB_SYNCHRONIZE', 'true') === 'true',
+        logging: config.get<string>('DB_LOGGING', 'false') === 'true',
       }),
     }),
     IndexesModule,
+    UsersModule,
   ],
 })
 export class AppModule {}

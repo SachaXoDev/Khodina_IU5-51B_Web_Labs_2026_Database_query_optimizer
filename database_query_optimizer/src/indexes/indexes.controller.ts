@@ -2,169 +2,152 @@ import {
   Controller,
   Get,
   Post,
+  Put,
+  Delete,
   Body,
-  Query,
-  Render,
-  Res,
   Param,
+  Query,
+  UseInterceptors,
+  UploadedFiles,
   ParseIntPipe,
+  BadRequestException,
 } from '@nestjs/common';
-import { Response } from 'express';
-import { IndexesService, CreateDraftDto, PublishIndexDto } from './indexes.service';
-import { IndexStatus } from './entities/database-index.entity';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import { IndexesService } from './indexes.service';
+import { IndexFiltersDto } from './dto/index-filters.dto';
+import { CreateDraftDto } from './dto/create-draft.dto';
+import { PublishIndexDto } from './dto/publish-index.dto';
+import { LikeIndexDto } from './dto/like-index.dto';
+import { IndexResponseDto, FeedResponseDto } from './dto/index-response.dto';
 
-@Controller('database-indexes')
+@Controller('indexes')
 export class IndexesController {
   constructor(private readonly indexesService: IndexesService) {}
 
   /**
-   * 1. GET: Лента индексов (Feed) через ORM
+   * 1. GET /api/indexes — список с фильтрацией (только опубликованные)
+   */
+  @Get()
+  async getIndexes(@Query() filters: IndexFiltersDto): Promise<IndexResponseDto[]> {
+    return this.indexesService.findAll(filters);
+  }
+
+  /**
+   * 2. GET /api/indexes/feed — лента услуг (только опубликованные)
+   * Поддерживает: /api/indexes/feed (без id) и /api/indexes/feed?id=X&next=true (по id)
    */
   @Get('feed')
-  async feed(
-    @Res() res: Response,
+  async getFeed(
     @Query('id') id?: string,
     @Query('next') next?: string,
-  ) {
-    const numericId = id ? parseInt(id, 10) : undefined;
-    
-    // По ТЗ: Если передан ID удаленной услуги (или несуществующей) — запрет просмотра
-    if (numericId) {
-      const target = await this.indexesService.findById(numericId);
-      if (!target || target.status === IndexStatus.DELETED) {
-        return res.redirect('/database-indexes/list');
-      }
-    }
-
+  ): Promise<FeedResponseDto> {
+    const parsedId = id !== undefined ? parseInt(id, 10) : undefined;
     const isNext = next === 'true';
-    const feedData = await this.indexesService.getFeedIndex(numericId, isNext);
-
-    const raw = feedData.current;
-    const formattedCurrent = raw
-      ? {
-          ...raw,
-          indexedColumn: raw.columnName,
-          description: raw.fullDescription || raw.shortDescription,
-          avgQueryTimeMs: raw.estimatedCreationTimeSec ? (raw.estimatedCreationTimeSec * 1.5).toFixed(1) : '12.4',
-          compactTotalRows: raw.cardinality ? (raw.cardinality >= 1000000 ? (raw.cardinality / 1000000).toFixed(1) + 'M' : (raw.cardinality / 1000).toFixed(0) + 'k') : '500k',
-          likesCount: raw.likes ? raw.likes.length : raw.likesCount,
-          isLikedByMe: (raw.likes && raw.likes.some((l) => l.userId === 1)) || false,
-        }
-      : null;
-
-    return res.render('feed', {
-      title: 'Database Index Optimizer — Feed',
-      activeTab: 'feed',
-      data: formattedCurrent,
-      prevId: feedData.prevId,
-      nextId: feedData.nextId,
-      hasPrev: feedData.hasPrev,
-      hasNext: feedData.hasNext,
-    });
+    return this.indexesService.getFeed(parsedId, isNext);
   }
 
   /**
-   * 2. GET: Каталог опубликованных индексов через ORM
+   * 3. GET /api/indexes/draft — получение черновика текущего пользователя
+   * По ТЗ: не более 1 записи, id не указывается.
    */
-  @Get('list')
-  @Render('list')
-  async list(
-    @Query('query') query?: string,
-    @Query('search') search?: string,
-    @Query('indexType') indexType?: string,
-  ) {
-    const effectiveSearch = search;
-    const minCardinality = query && query.trim() !== '' ? parseInt(query, 10) : undefined;
-
-    const items = await this.indexesService.findAll({
-      search: effectiveSearch,
-      indexType,
-      minCardinality,
-    });
-
-    const formattedData = items.map((item) => {
-      // Количество лайков вычисляем динамически по числу строк в таблице index_likes
-      const dynamicLikesCount = item.likes && item.likes.length > 0 ? item.likes.length : item.likesCount;
-      const isLiked = item.likes && item.likes.some((l) => l.userId === 1);
-
-      return {
-        ...item,
-        indexedColumn: item.columnName,
-        formattedCardinality: item.cardinality ? item.cardinality.toLocaleString('ru-RU') : '0',
-        likesCount: dynamicLikesCount,
-        isLikedByMe: isLiked,
-      };
-    });
-
-    return {
-      title: 'Database Index Optimizer — Catalog',
-      activeTab: 'list',
-      data: formattedData,
-      query: query || '',
-    };
+  @Get('draft')
+  async getDraft(): Promise<IndexResponseDto | null> {
+    return this.indexesService.getDraft();
   }
 
   /**
-   * 3. GET: Страница добавления / публикации карточки через ORM
+   * 4. GET /api/indexes/:id — получение опубликованной услуги по ID
    */
-  @Get('create')
-  @Render('create')
-  async createPage() {
-    const existingDraft = await this.indexesService.getUserDraft(1);
+  @Get(':id')
+  async getIndexById(@Param('id', ParseIntPipe) id: number): Promise<IndexResponseDto> {
+    return this.indexesService.findOne(id);
+  }
 
-    return {
-      title: 'Database Index Optimizer — Create',
-      activeTab: 'create',
-      hasDraft: !!existingDraft,
-      draft: existingDraft || {
-        indexName: 'idx_analytics_event_date_btree',
-        tableName: 'analytics_events',
-        indexType: 'B-Tree',
-        columnName: 'created_at',
-        scanCostReductionPercent: 94.0,
-        cardinality: 2500000,
-        shortDescription: 'Оптимизация поиска аналитических событий по временной шкале',
-        fullDescription: 'B-Tree индекс по полю created_at таблицы analytics_events ускоряет выборку диапазонов дат.',
-        imageUrl: '/assets/default_index.svg',
-        videoUrl: '/assets/default_video.mp4',
+  /**
+   * 5. POST /api/indexes — добавление/обновление черновика + файлов картинки и видео
+   * Названия файлов сохраняются в БД на латинице, сами файлы — в MinIO.
+   */
+  @Post()
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'image', maxCount: 1 },
+        { name: 'video', maxCount: 1 },
+      ],
+      {
+        storage: memoryStorage(),
+        limits: {
+          fileSize: 50 * 1024 * 1024, // 50MB (с запасом для короткого видео)
+        },
+        fileFilter: (req, file, callback) => {
+          if (file.fieldname === 'image') {
+            if (!file.mimetype.match(/\/(jpg|jpeg|png|webp|svg\+xml)$/)) {
+              return callback(
+                new BadRequestException('Изображение должно быть в формате jpg, jpeg, png, webp или svg'),
+                false,
+              );
+            }
+          }
+          if (file.fieldname === 'video') {
+            if (!file.mimetype.match(/\/(mp4|webm|quicktime|octet-stream)$/) && !file.originalname.match(/\.(mp4|webm|mov)$/i)) {
+              return callback(
+                new BadRequestException('Видео должно быть в формате mp4 или webm'),
+                false,
+              );
+            }
+          }
+          callback(null, true);
+        },
       },
-    };
-  }
-
-  /**
-   * 4. POST: Создание нового черновика через ORM (Кнопка «Далее»)
-   */
-  @Post('create')
+    ),
+  )
   async createDraft(
-    @Body() body: CreateDraftDto,
-    @Res() res: Response,
-  ) {
-    await this.indexesService.createDraft(body, 1);
-    return res.redirect('/database-indexes/create');
+    @Body() dto: CreateDraftDto,
+    @UploadedFiles()
+    files?: {
+      image?: Express.Multer.File[];
+      video?: Express.Multer.File[];
+    },
+  ): Promise<IndexResponseDto> {
+    const imageFile = files?.image?.[0];
+    const videoFile = files?.video?.[0];
+    return this.indexesService.createOrUpdateDraft(dto, imageFile, videoFile);
   }
 
   /**
-   * 5. POST: Публикация карточки через ORM (Кнопка «Опубликовать»)
+   * 6. PUT /api/indexes/:id/publish — публикация услуги (смена статуса на published)
+   * Вернуть в черновик нельзя.
    */
-  @Post(':id/publish')
+  @Put(':id/publish')
   async publishIndex(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: PublishIndexDto,
-    @Res() res: Response,
-  ) {
-    await this.indexesService.publishDraft(id, body);
-    return res.redirect('/database-indexes/list');
+    @Body() dto?: PublishIndexDto,
+  ): Promise<IndexResponseDto> {
+    return this.indexesService.publish(id, dto);
   }
 
   /**
-   * 6. POST: Логическое удаление услуги ЧЕРЕЗ SQL КУРСОР (WHERE CURRENT OF)
+   * 7. DELETE /api/indexes/:id — мягкое удаление услуги (soft delete)
    */
-  @Post(':id/delete')
+  @Delete(':id')
   async deleteIndex(
     @Param('id', ParseIntPipe) id: number,
-    @Res() res: Response,
-  ) {
-    await this.indexesService.deleteByCursor(id);
-    return res.redirect('/database-indexes/list');
+  ): Promise<{ message: string; id: number; status: string }> {
+    return this.indexesService.softDelete(id);
+  }
+
+  /**
+   * 8. POST /api/indexes/:id/like — постановка или отмена лайка
+   * Поле value: 1 — ставит лайк, 0 — отменяет лайк.
+   */
+  @Post(':id/like')
+  async toggleLike(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: LikeIndexDto,
+  ): Promise<IndexResponseDto> {
+    const rawVal = dto?.value;
+    const numericValue = (rawVal === 0 || rawVal === '0') ? 0 : 1;
+    return this.indexesService.toggleLike(id, numericValue);
   }
 }
