@@ -10,7 +10,7 @@ import { Type } from 'class-transformer';
 export class PublishIndexDto {
   @IsOptional()
   @IsString()
-  @MinLength(3, { message: 'Название индекса должно содержать минимум 3 символа' })
+  @MinLength(3)
   indexName?: string;
 
   @IsOptional()

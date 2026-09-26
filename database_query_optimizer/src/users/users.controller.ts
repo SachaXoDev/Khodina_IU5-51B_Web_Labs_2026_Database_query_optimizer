@@ -21,7 +21,7 @@ export class UsersController {
    */
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() dto: LoginUserDto) {
+  async login(@Body() dto: LoginUserDto): Promise<{ username: string }> {
     return this.usersService.loginStub(dto);
   }
 
@@ -29,8 +29,8 @@ export class UsersController {
    * 3. POST /api/users/logout — деавторизация (заглушка для 4-й лабы)
    */
   @Post('logout')
-  @HttpCode(HttpStatus.OK)
-  async logout() {
-    return this.usersService.logoutStub();
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async logout(): Promise<void> {
+    await this.usersService.logoutStub();
   }
 }

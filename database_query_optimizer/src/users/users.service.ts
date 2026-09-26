@@ -25,7 +25,7 @@ export class UsersService {
     });
 
     if (existing) {
-      throw new ConflictException(`Пользователь с логином "${dto.username}" уже существует`);
+      throw new ConflictException();
     }
 
     const user = this.userRepository.create({
@@ -46,10 +46,8 @@ export class UsersService {
   /**
    * Заглушка аутентификации для 4-й лабораторной работы
    */
-  async loginStub(dto: LoginUserDto): Promise<{ status: string; message: string; username: string }> {
+  async loginStub(dto: LoginUserDto): Promise<{ username: string }> {
     return {
-      status: 'success',
-      message: 'Аутентификация успешна (заглушка для лабораторной работы №4)',
       username: dto.username,
     };
   }
@@ -57,10 +55,7 @@ export class UsersService {
   /**
    * Заглушка деавторизации для 4-й лабораторной работы
    */
-  async logoutStub(): Promise<{ status: string; message: string }> {
-    return {
-      status: 'success',
-      message: 'Деавторизация успешна (заглушка для лабораторной работы №4)',
-    };
+  async logoutStub(): Promise<void> {
+    return;
   }
 }

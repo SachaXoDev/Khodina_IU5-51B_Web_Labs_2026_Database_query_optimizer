@@ -11,6 +11,8 @@ import {
   UploadedFiles,
   ParseIntPipe,
   BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -52,7 +54,7 @@ export class IndexesController {
    * По ТЗ: не более 1 записи, id не указывается.
    */
   @Get('draft')
-  async getDraft(): Promise<IndexResponseDto | null> {
+  async getDraft(): Promise<IndexResponseDto> {
     return this.indexesService.getDraft();
   }
 
@@ -84,7 +86,7 @@ export class IndexesController {
           if (file.fieldname === 'image') {
             if (!file.mimetype.match(/\/(jpg|jpeg|png|webp|svg\+xml)$/)) {
               return callback(
-                new BadRequestException('Изображение должно быть в формате jpg, jpeg, png, webp или svg'),
+                new BadRequestException(),
                 false,
               );
             }
@@ -92,7 +94,7 @@ export class IndexesController {
           if (file.fieldname === 'video') {
             if (!file.mimetype.match(/\/(mp4|webm|quicktime|octet-stream)$/) && !file.originalname.match(/\.(mp4|webm|mov)$/i)) {
               return callback(
-                new BadRequestException('Видео должно быть в формате mp4 или webm'),
+                new BadRequestException(),
                 false,
               );
             }
@@ -131,10 +133,11 @@ export class IndexesController {
    * 7. DELETE /api/indexes/:id — мягкое удаление услуги (soft delete)
    */
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async deleteIndex(
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<{ message: string; id: number; status: string }> {
-    return this.indexesService.softDelete(id);
+  ): Promise<void> {
+    await this.indexesService.softDelete(id);
   }
 
   /**

@@ -1,10 +1,7 @@
-import { IndexStatus } from '../entities/database-index.entity';
-
 export class IndexResponseDto {
   id: number;
   indexName: string;
   shortDescription: string;
-  status: IndexStatus;
   imageFileName: string | null;
   videoFileName: string | null;
   imageUrl: string | null;

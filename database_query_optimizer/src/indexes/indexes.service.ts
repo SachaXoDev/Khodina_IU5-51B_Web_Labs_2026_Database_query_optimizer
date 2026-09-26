@@ -158,26 +158,31 @@ export class IndexesService implements OnModuleInit {
     const imageUrl = await this.minioService.getPresignedUrl(entity.imageUrl);
     const videoUrl = await this.minioService.getPresignedUrl(entity.videoUrl);
 
+    let authorUsername = entity.author ? entity.author.username : null;
+    if (!authorUsername && entity.authorId) {
+      const user = await this.userRepository.findOne({ where: { id: entity.authorId } });
+      authorUsername = user ? user.username : null;
+    }
+
     return {
       id: entity.id,
-      indexName: entity.indexName,
-      shortDescription: entity.shortDescription,
-      status: entity.status,
-      imageFileName: entity.imageUrl,
-      videoFileName: entity.videoUrl,
-      imageUrl: imageUrl,
-      videoUrl: videoUrl,
-      tableName: entity.tableName,
-      indexType: entity.indexType,
-      columnName: entity.columnName,
+      indexName: entity.indexName ?? '',
+      shortDescription: entity.shortDescription ?? '',
+      imageFileName: entity.imageUrl ?? null,
+      videoFileName: entity.videoUrl ?? null,
+      imageUrl: imageUrl ?? null,
+      videoUrl: videoUrl ?? null,
+      tableName: entity.tableName ?? '',
+      indexType: entity.indexType ?? '',
+      columnName: entity.columnName ?? '',
       cardinality: Number(entity.cardinality || 0),
-      fullDescription: entity.fullDescription,
+      fullDescription: entity.fullDescription ?? '',
       likesCount: Number(entity.likesCount || 0),
       isLikedByCurrentUser: isLiked,
-      authorId: entity.authorId,
-      authorUsername: entity.author ? entity.author.username : null,
+      authorId: entity.authorId ?? null,
+      authorUsername: authorUsername,
       createdAt: entity.createdAt,
-      publishedAt: entity.publishedAt,
+      publishedAt: entity.publishedAt ?? null,
     };
   }
 
@@ -260,7 +265,7 @@ export class IndexesService implements OnModuleInit {
     });
 
     if (!entity) {
-      throw new NotFoundException(`Опубликованная услуга не найдена`);
+      throw new NotFoundException();
     }
 
     const prevId = targetIndex > 0 ? ids[targetIndex - 1] : ids[ids.length - 1];
@@ -281,7 +286,7 @@ export class IndexesService implements OnModuleInit {
    * 3. GET /api/indexes/draft — получение черновика текущего пользователя
    * По ТЗ: не более 1 записи для пользователя, ID в параметрах не указывается.
    */
-  async getDraft(): Promise<IndexResponseDto | null> {
+  async getDraft(): Promise<IndexResponseDto> {
     const currentUserId = getCurrentUserId(); // Использование функции-singleton
 
     const draft = await this.indexRepository.findOne({
@@ -293,7 +298,7 @@ export class IndexesService implements OnModuleInit {
     });
 
     if (!draft) {
-      return null;
+      throw new NotFoundException();
     }
 
     return this.toDto(draft, currentUserId);
@@ -365,7 +370,11 @@ export class IndexesService implements OnModuleInit {
     }
 
     const saved = await this.indexRepository.save(draft);
-    return this.toDto(saved, currentUserId);
+    const reloaded = await this.indexRepository.findOne({
+      where: { id: saved.id },
+      relations: { author: true },
+    });
+    return this.toDto(reloaded!, currentUserId);
   }
 
   /**
@@ -382,15 +391,15 @@ export class IndexesService implements OnModuleInit {
     });
 
     if (!entity || entity.status === IndexStatus.DELETED) {
-      throw new NotFoundException(`Услуга с ID ${id} не найдена`);
+      throw new NotFoundException();
     }
 
     if (entity.authorId !== currentUserId) {
-      throw new ForbiddenException('Только автор услуги может опубликовать данный черновик');
+      throw new ForbiddenException();
     }
 
     if (entity.status === IndexStatus.PUBLISHED) {
-      throw new BadRequestException('Услуга уже опубликована. Повторная публикация или возврат в черновик невозможны.');
+      throw new BadRequestException();
     }
 
     if (dto) {
@@ -407,14 +416,18 @@ export class IndexesService implements OnModuleInit {
     entity.publishedAt = new Date();
 
     const saved = await this.indexRepository.save(entity);
-    return this.toDto(saved, currentUserId);
+    const reloaded = await this.indexRepository.findOne({
+      where: { id: saved.id },
+      relations: { author: true },
+    });
+    return this.toDto(reloaded!, currentUserId);
   }
 
   /**
    * 6. DELETE /api/indexes/:id — мягкое удаление услуги
    * По ТЗ: только soft delete (status = 'deleted'), записи клиенту больше не отдаются.
    */
-  async softDelete(id: number): Promise<{ message: string; id: number; status: string }> {
+  async softDelete(id: number): Promise<void> {
     const currentUserId = getCurrentUserId(); // Использование функции-singleton
 
     const entity = await this.indexRepository.findOne({
@@ -422,18 +435,12 @@ export class IndexesService implements OnModuleInit {
     });
 
     if (!entity || entity.status === IndexStatus.DELETED) {
-      throw new NotFoundException(`Услуга с ID ${id} не найдена`);
+      throw new NotFoundException();
     }
 
     // Мягкое удаление через ORM
     entity.status = IndexStatus.DELETED;
     await this.indexRepository.save(entity);
-
-    return {
-      message: `Услуга с ID ${id} успешно удалена (soft delete)`,
-      id: id,
-      status: 'deleted',
-    };
   }
 
   /**
@@ -449,7 +456,7 @@ export class IndexesService implements OnModuleInit {
     });
 
     if (!entity || entity.status === IndexStatus.DELETED) {
-      throw new NotFoundException(`Услуга с ID ${id} не найдена`);
+      throw new NotFoundException();
     }
 
     const existingLike = await this.likeRepository.findOne({
@@ -493,7 +500,7 @@ export class IndexesService implements OnModuleInit {
     });
 
     if (!entity) {
-      throw new NotFoundException(`Опубликованная услуга с ID ${id} не найдена`);
+      throw new NotFoundException();
     }
 
     return this.toDto(entity, currentUserId);

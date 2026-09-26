@@ -1,6 +1,7 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
+import { HttpExceptionFilter } from './common/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,6 +17,9 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // Глобальный фильтр исключений: код ошибки в HTTP статусе, без полей status/message в теле
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   // Автоматическая сериализация ответов и скрытие полей с @Exclude()
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
