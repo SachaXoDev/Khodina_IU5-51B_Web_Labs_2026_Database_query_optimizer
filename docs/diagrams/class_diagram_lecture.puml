@@ -1,0 +1,150 @@
+@startuml class_diagram_lecture
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam classAttributeIconSize 0
+
+skinparam package {
+  BackgroundColor white
+  BorderColor black
+}
+skinparam class {
+  BackgroundColor white
+  BorderColor black
+}
+
+top to bottom direction
+
+package "Страницы фронтенда" as PkgPages {
+  class "Каталог" as PageCatalog <<Page>>
+  class "Лента" as PageFeed <<Page>>
+  class "Создание" as PageCreate <<Page>>
+  class "Авторизация" as PageAuth <<Page>>
+}
+
+circle "API Индексов" as ApiIndexes
+circle "API Пользователей" as ApiUsers
+
+package "Веб-сервис (Бэкенд)" as PkgWebService {
+  class "IndexesService" as DomainIndex {
+    +createOrUpdateDraft(dto, files)
+    +publish(id)
+    +findAll(filters)
+    +findOne(id)
+    +getDraft()
+    +getFeed(id, next)
+    +softDelete(id)
+    +toggleLike(id, dto)
+  }
+
+  class "UsersService" as DomainUsers {
+    +register(dto)
+    +login(dto)
+  }
+}
+
+package "Модель" as PkgModel {
+  class "Индекс" as ModelIndex {
+    -id: number
+    -indexName: string
+    -shortDescription: string
+    -status: string
+    -likesCount: number
+    -authorId: number
+    -publishedAt: Date
+  }
+
+  class "Пользователь" as ModelUser {
+    -id: number
+    -username: string
+    -role: string
+    -createdAt: Date
+  }
+
+  class "Лайк" as ModelLike {
+    -id: number
+    -userId: number
+    -indexId: number
+  }
+}
+
+package "База данных" as PkgDB {
+  class "Индекс" as TableIndex <<Table>> {
+    +index_id : int [PK]
+    +index_name : varchar
+    +short_description : text
+    +status : varchar
+    +author_id : int [FK]
+    +published_at : timestamp
+  }
+
+  class "Пользователь" as TableUser <<Table>> {
+    +user_id : int [PK]
+    +username : varchar
+    +role : varchar
+    +password_hash : varchar
+  }
+
+  class "Лайки" as TableLike <<Table>> {
+    +like_id : int [PK]
+    +user_id : int [FK]
+    +index_id : int [FK]
+  }
+}
+
+' Выравнивание колонок:
+' [Страницы]  [Веб-сервис]  [Модель]
+'                           [База данных]
+
+PageCatalog -[hidden]down-> PageFeed
+PageFeed -[hidden]down-> PageCreate
+PageCreate -[hidden]down-> PageAuth
+
+PkgPages -[hidden]right-> ApiIndexes
+ApiIndexes -[hidden]down-> ApiUsers
+
+ApiIndexes -[hidden]right-> DomainIndex
+DomainIndex -[hidden]down-> DomainUsers
+
+DomainIndex -[hidden]right-> ModelIndex
+DomainUsers -[hidden]right-> ModelUser
+ModelIndex -[hidden]down-> ModelUser
+ModelUser -[hidden]down-> ModelLike
+
+PkgModel -[hidden]down-> PkgDB
+
+TableIndex -[hidden]down-> TableUser
+TableUser -[hidden]down-> TableLike
+
+' Лучики сходятся в кружки
+PageCatalog -[#black]-> ApiIndexes
+PageFeed -[#black]-> ApiIndexes
+PageCreate -[#black]-> ApiIndexes
+PageAuth -[#black]-> ApiUsers
+
+' Провод входит один в домен
+ApiIndexes -[#black]-> DomainIndex
+ApiUsers -[#black]-> DomainUsers
+
+' Из доменов стрелка направо в модель
+DomainIndex -[#black,dashed]right-> ModelIndex
+DomainUsers -[#black,dashed]right-> ModelUser
+DomainIndex -[#black,dashed]right-> ModelLike
+
+' Связи моделей
+ModelUser "1" - "0..*" ModelIndex
+ModelUser "1" - "0..*" ModelLike
+ModelIndex "1" - "0..*" ModelLike
+
+' Из моделей стрелка вниз в таблицы
+ModelIndex -[#black,dashed]down-> TableIndex
+ModelUser -[#black,dashed]down-> TableUser
+ModelLike -[#black,dashed]down-> TableLike
+
+' Связи таблиц
+TableUser "0..1" - "0..*" TableIndex
+TableUser "0..1" - "0..*" TableLike
+TableIndex "0..1" - "0..*" TableLike
+
+@enduml

@@ -1,0 +1,311 @@
+@startuml class_diagram
+skinparam monochrome false
+skinparam roundcorner 8
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Диаграмма классов бэкенда и страниц веб-сервиса (Лабораторная работа №3)
+
+package "Frontend SPA (4 страницы)" #E8F4F8 {
+  class CatalogPage <<Page>> {
+    + filters: FilterParams
+    + items: IndexResponseDto[]
+    + onFilterChange(): void
+    + renderCatalog(): void
+    + onDeleteClick(id: number): void
+  }
+
+  class FeedPage <<Page>> {
+    + currentItem: IndexResponseDto
+    + prevId: number | null
+    + nextId: number | null
+    + onNextClick(): void
+    + onPrevClick(): void
+    + onLikeToggle(): void
+    + renderFeed(): void
+  }
+
+  class CreateDraftPage <<Page>> {
+    + draft: IndexResponseDto | null
+    + selectedImage: File
+    + selectedVideo: File
+    + onFormChange(): void
+    + onFileUpload(): void
+    + onSaveDraft(): void
+    + onPublish(): void
+  }
+
+  class AuthPage <<Page>> {
+    + usernameInput: string
+    + passwordInput: string
+    + onRegisterSubmit(): void
+    + onLoginSubmit(): void
+    + onLogout(): void
+  }
+}
+
+package "Backend: Controllers (Домены методов по URL)" #F9FBE7 {
+  interface IIndexesController {
+    + findAll(query: FilterIndexDto): Promise<IndexResponseDto[]>
+    + getFeed(id?: number, next?: boolean): Promise<FeedResponseDto>
+    + getDraft(): Promise<IndexResponseDto>
+    + getIndexById(id: number): Promise<IndexResponseDto>
+    + createOrUpdateDraft(dto: CreateDraftDto, files: any): Promise<IndexResponseDto>
+    + publish(id: number, dto: PublishIndexDto): Promise<IndexResponseDto>
+    + softDelete(id: number): Promise<void>
+    + toggleLike(id: number, dto: LikeIndexDto): Promise<any>
+  }
+
+  class IndexesController <<(/api/indexes)>> implements IIndexesController {
+    - indexesService: IndexesService
+    + findAll(query: FilterIndexDto): Promise<IndexResponseDto[]>
+    + getFeed(id?: number, next?: boolean): Promise<FeedResponseDto>
+    + getDraft(): Promise<IndexResponseDto>
+    + getIndexById(id: number): Promise<IndexResponseDto>
+    + createOrUpdateDraft(dto: CreateDraftDto, files: any): Promise<IndexResponseDto>
+    + publish(id: number, dto: PublishIndexDto): Promise<IndexResponseDto>
+    + softDelete(id: number): Promise<void>
+    + toggleLike(id: number, dto: LikeIndexDto): Promise<any>
+  }
+
+  interface IUsersController {
+    + register(dto: RegisterUserDto): Promise<UserResponseDto>
+    + login(dto: RegisterUserDto): Promise<any>
+    + logout(): Promise<any>
+  }
+
+  class UsersController <<(/api/users)>> implements IUsersController {
+    - usersService: UsersService
+    + register(dto: RegisterUserDto): Promise<UserResponseDto>
+    + login(dto: RegisterUserDto): Promise<any>
+    + logout(): Promise<any>
+  }
+}
+
+package "Backend: Services & Singletons" #FFF9C4 {
+  class IndexesService {
+    - indexRepository: Repository<DatabaseIndex>
+    - userRepository: Repository<User>
+    - likeRepository: Repository<IndexLike>
+    - minioService: MinioService
+    + findAll(query: FilterIndexDto): Promise<IndexResponseDto[]>
+    + getFeed(id?: number, next?: boolean): Promise<FeedResponseDto>
+    + getDraft(): Promise<IndexResponseDto>
+    + findOne(id: number): Promise<IndexResponseDto>
+    + createOrUpdateDraft(dto: CreateDraftDto, files: any): Promise<IndexResponseDto>
+    + publish(id: number, dto: PublishIndexDto): Promise<IndexResponseDto>
+    + softDelete(id: number): Promise<void>
+    + toggleLike(id: number, dto: LikeIndexDto): Promise<any>
+    - toDto(entity: DatabaseIndex, currentUserId: number): IndexResponseDto
+  }
+
+  class UsersService {
+    - userRepository: Repository<User>
+    + register(dto: RegisterUserDto): Promise<UserResponseDto>
+    + login(dto: RegisterUserDto): Promise<any>
+    + logout(): Promise<any>
+  }
+
+  class CurrentUserSingleton <<Singleton>> {
+    - {static} instance: CurrentUserSingleton
+    - currentUserId: number = 1
+    + {static} getInstance(): CurrentUserSingleton
+    + getUserId(): number
+    + setUserId(id: number): void
+  }
+
+  class MinioService {
+    - minioClient: Client
+    - bucketName: string = "index-media"
+    + uploadFile(file: Express.Multer.File, subfolder: string): Promise<string>
+    + getFileUrl(fileName: string): Promise<string>
+  }
+}
+
+package "Backend: DTO & Data Transfer Objects" #E1F5FE {
+  class IndexResponseDto {
+    + id: number
+    + indexName: string
+    + shortDescription: string
+    + imageFileName: string
+    + videoFileName: string
+    + imageUrl: string
+    + videoUrl: string
+    + tableName: string
+    + indexType: string
+    + columnName: string
+    + cardinality: number
+    + fullDescription: string
+    + likesCount: number
+    + isLikedByCurrentUser: boolean
+    + isCreator: number
+    + authorId: number
+    + authorUsername: string
+    + createdAt: Date
+    + publishedAt: Date
+  }
+
+  class FeedResponseDto {
+    + current: IndexResponseDto
+    + prevId: number | null
+    + nextId: number | null
+    + hasPrev: boolean
+    + hasNext: boolean
+  }
+
+  class CreateDraftDto {
+    + indexName: string
+    + shortDescription: string
+    + tableName: string
+    + indexType: string
+    + columnName: string
+    + cardinality: number
+    + fullDescription: string
+  }
+
+  class PublishIndexDto {
+    + indexName?: string
+    + shortDescription?: string
+    + tableName?: string
+    + indexType?: string
+    + columnName?: string
+    + cardinality?: number
+    + fullDescription?: string
+  }
+
+  class LikeIndexDto {
+    + value: number
+  }
+
+  class RegisterUserDto {
+    + username: string
+    + password: string
+  }
+}
+
+package "Backend: Models (TypeORM Entities)" #EDE7F6 {
+  enum IndexStatus {
+    DRAFT
+    PUBLISHED
+    DELETED
+  }
+
+  class DatabaseIndex <<Entity>> {
+    + id: number
+    + indexName: string
+    + shortDescription: string
+    + imageUrl: string
+    + videoUrl: string
+    + tableName: string
+    + indexType: string
+    + columnName: string
+    + cardinality: number
+    + fullDescription: string
+    + status: IndexStatus
+    + likesCount: number
+    + authorId: number
+    + author: User
+    + likes: IndexLike[]
+    + createdAt: Date
+    + publishedAt: Date
+  }
+
+  class User <<Entity>> {
+    + id: number
+    + username: string
+    + password: string
+    + role: string
+    + indexes: DatabaseIndex[]
+    + likes: IndexLike[]
+    + createdAt: Date
+  }
+
+  class IndexLike <<Entity>> {
+    + id: number
+    + userId: number
+    + indexId: number
+    + user: User
+    + index: DatabaseIndex
+    + createdAt: Date
+  }
+}
+
+package "Database Tables (PostgreSQL)" #ECEFF1 {
+  entity "database_indexes" as db_indexes {
+    * id : serial [PK]
+    --
+    * index_name : varchar(100)
+    short_description : text
+    image_file_name : varchar(255)
+    video_file_name : varchar(255)
+    table_name : varchar(64)
+    index_type : varchar(30)
+    column_name : varchar(64)
+    cardinality : integer
+    full_description : text
+    * status : varchar(20)
+    * likes_count : integer
+    author_id : integer [FK]
+    * created_at : timestamp
+    published_at : timestamp
+  }
+
+  entity "users" as db_users {
+    * id : serial [PK]
+    --
+    * username : varchar(50) [UQ]
+    * password : varchar(255)
+    * role : varchar(20)
+    * created_at : timestamp
+  }
+
+  entity "index_likes" as db_likes {
+    * id : serial [PK]
+    --
+    * user_id : integer [FK]
+    * index_id : integer [FK]
+    * created_at : timestamp
+  }
+}
+
+' Связи между страницами фронтенда и доменами контроллеров
+CatalogPage ..> IndexesController : GET /api/indexes\nDELETE /api/indexes/:id
+FeedPage ..> IndexesController : GET /api/indexes/feed\nPOST /api/indexes/:id/like
+CreateDraftPage ..> IndexesController : GET /api/indexes/draft\nPOST /api/indexes\nPUT /api/indexes/:id/publish
+AuthPage ..> UsersController : POST /api/users/login\nPOST /api/users/register
+
+' Контроллеры вызывают сервисы
+IndexesController --> IndexesService : delegates
+UsersController --> UsersService : delegates
+
+' Сервисы зависят от синглтона и вспомогательных служб
+IndexesService ..> CurrentUserSingleton : getCurrentUserId()
+IndexesService ..> MinioService : upload & get URLs
+
+' Взаимодействие сервисов с моделями и DTO
+IndexesService ..> IndexResponseDto : returns
+IndexesService ..> FeedResponseDto : returns
+IndexesService ..> CreateDraftDto : receives
+IndexesService ..> PublishIndexDto : receives
+IndexesService ..> LikeIndexDto : receives
+UsersService ..> RegisterUserDto : receives
+
+IndexesService --> DatabaseIndex : manages
+IndexesService --> IndexLike : manages
+IndexesService --> User : queries
+UsersService --> User : manages
+
+' Связи между моделями
+DatabaseIndex "1" o-- "0..*" IndexLike : likes
+User "1" o-- "0..*" IndexLike : user likes
+User "1" o-- "0..*" DatabaseIndex : authored indices
+DatabaseIndex ..> IndexStatus
+
+' Связь сущностей с таблицами реляционной БД
+DatabaseIndex ..> db_indexes : ORM mapping
+User ..> db_users : ORM mapping
+IndexLike ..> db_likes : ORM mapping
+@enduml

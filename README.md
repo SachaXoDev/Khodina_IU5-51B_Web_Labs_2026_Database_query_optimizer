@@ -66,7 +66,7 @@ database_query_optimizer/
 6. **Бизнес-правила смены статусов**:
    - `POST /api/indexes` — создание черновика услуги (в БД фиксируется `status: draft`).
    - `PUT /api/indexes/:id/publish` — перевод строго `draft -> published` в БД. Повторная публикация или возврат в черновик запрещены.
-7. **Мягкое удаление (Soft Delete)**: `DELETE /api/indexes/:id` выставляет `status = 'deleted'` в БД и возвращает `204 No Content`. Удалённые услуги клиенту больше не возвращаются.
+7. **Мягкое удаление (Soft Delete)**: `DELETE /api/indexes/:id` выставляет `status = 'deleted'` в БД и возвращает `204 No Content`. Удаление разрешено только для записей, созданных текущим пользователем (`authorId === currentUserId`). Удалённые услуги клиенту больше не возвращаются.
 8. **Хранилище MinIO**: Изображения и видео выгружаются в бакет MinIO; имена файлов генерируются строго на латинице (например, `index_image_171000_abc.jpg`) и сохраняются в колонках БД `image_url` и `video_url`.
 9. **Система лайков**: `POST /api/indexes/:id/like` принимает `value: 1` (поставить лайк) и `value: 0` (отменить лайк) от текущего пользователя.
 
@@ -77,14 +77,14 @@ database_query_optimizer/
 ### Домен Услуги (`/api/indexes`):
 | Метод | URL | Описание |
 |---|---|---|
-| `GET` | `/api/indexes?search=...&indexType=...` | Список услуг с фильтрацией (только опубликованные) |
+| `GET` | `/api/indexes?search=...&indexType=...` | Список услуг с фильтрацией (только опубликованные, с флагом `isCreator`: 0 или 1) |
 | `GET` | `/api/indexes/feed` | Лента опубликованных услуг (без ID — первый элемент) |
 | `GET` | `/api/indexes/feed?id=1&next=true` | Переход к следующему элементу ленты по ID |
 | `GET` | `/api/indexes/draft` | Получение черновика текущего пользователя (без ID в URL) |
 | `GET` | `/api/indexes/:id` | Просмотр опубликованной услуги по ID |
 | `POST` | `/api/indexes` | Создание черновика с картинкой и видео (`multipart/form-data`) |
 | `PUT` | `/api/indexes/:id/publish` | Публикация черновика (`draft -> published`) |
-| `DELETE`| `/api/indexes/:id` | Мягкое удаление услуги (`soft delete`) |
+| `DELETE`| `/api/indexes/:id` | Мягкое удаление услуги (`soft delete`, только для услуг автора) |
 | `POST` | `/api/indexes/:id/like` | Постановка (`1`) или отмена (`0`) лайка |
 
 ### Домен Пользователи (`/api/users`):
@@ -152,3 +152,13 @@ npm run start:dev
 В корне репозитория находится файл **`lab3_postman_collection.json`**.
 1. Откройте Postman ➔ нажмите **Import** ➔ выберите `lab3_postman_collection.json`.
 2. В коллекции представлены все 10 обязательных запросов для демонстрации (скриншоты 1–10).
+
+---
+
+## 7. Диаграмма классов (UML)
+Диаграмма охватывает контроллеры по URL-доменам, интерфейсы, сервисы, функции-синглтоны, DTO, TypeORM-модели, таблицы PostgreSQL и 4 страницы SPA фронтенда.
+- Исходный код: [`docs/diagrams/class_diagram.puml`](docs/diagrams/class_diagram.puml)
+- Изображение: [`docs/diagrams/class_diagram.png`](docs/diagrams/class_diagram.png)
+
+![Диаграмма классов](docs/diagrams/class_diagram.png)
+

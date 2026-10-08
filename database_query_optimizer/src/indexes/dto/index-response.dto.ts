@@ -15,6 +15,7 @@ export class IndexResponseDto {
   isLikedByCurrentUser: boolean;
   authorId: number | null;
   authorUsername: string | null;
+  isOwner: number; // Признак 0/1: создатель услуги совпадает с текущим пользователем
   createdAt: Date;
   publishedAt: Date | null;
 }

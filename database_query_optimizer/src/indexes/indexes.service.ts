@@ -181,6 +181,7 @@ export class IndexesService implements OnModuleInit {
       isLikedByCurrentUser: isLiked,
       authorId: entity.authorId ?? null,
       authorUsername: authorUsername,
+      isOwner: entity.authorId === currentUserId ? 1 : 0,
       createdAt: entity.createdAt,
       publishedAt: entity.publishedAt ?? null,
     };
@@ -436,6 +437,11 @@ export class IndexesService implements OnModuleInit {
 
     if (!entity || entity.status === IndexStatus.DELETED) {
       throw new NotFoundException();
+    }
+
+    // Проверка авторства: удалять разрешено только услуги текущего пользователя
+    if (entity.authorId !== currentUserId) {
+      throw new ForbiddenException('Удаление чужих услуг запрещено');
     }
 
     // Мягкое удаление через ORM
