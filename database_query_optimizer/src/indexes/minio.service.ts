@@ -137,17 +137,11 @@ export class MinioService implements OnModuleInit {
     // Если в БД хранился относительный путь вида /media/xxx.jpg или /assets/xxx.svg, очищаем до чистого имени
     const cleanFileName = fileName.replace(/^\/?(media|assets)\//, '');
 
-    try {
-      const expiresIn = 7 * 24 * 60 * 60; // 7 дней
-      return await this.minioClient.presignedGetObject(this.bucketName, cleanFileName, expiresIn);
-    } catch (error: any) {
-      this.logger.warn(`Ошибка при генерации presigned URL для ${cleanFileName}: ${error?.message || error}`);
-      // Fallback на прямой HTTP URL
-      const protocol = this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true' ? 'https' : 'http';
-      const endpoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost');
-      const port = this.configService.get<number>('MINIO_PORT', 9000);
-      return `${protocol}://${endpoint}:${port}/${this.bucketName}/${cleanFileName}`;
-    }
+    // Прямой постоянный URL к объекту в публичном бакете MinIO (без заголовков/сигнатур в строке запроса)
+    const protocol = this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true' ? 'https' : 'http';
+    const endpoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost');
+    const port = this.configService.get<number>('MINIO_PORT', 9000);
+    return `${protocol}://${endpoint}:${port}/${this.bucketName}/${cleanFileName}`;
   }
 
   /**

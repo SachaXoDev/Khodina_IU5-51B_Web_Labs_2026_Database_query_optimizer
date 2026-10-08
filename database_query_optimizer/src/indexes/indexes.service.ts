@@ -239,8 +239,6 @@ export class IndexesService implements OnModuleInit {
         current: null,
         prevId: null,
         nextId: null,
-        hasPrev: false,
-        hasNext: false,
       };
     }
 
@@ -278,8 +276,6 @@ export class IndexesService implements OnModuleInit {
       current: currentDto,
       prevId: prevId,
       nextId: nextId,
-      hasPrev: ids.length > 1,
-      hasNext: ids.length > 1,
     };
   }
 

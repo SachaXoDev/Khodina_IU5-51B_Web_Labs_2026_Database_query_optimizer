@@ -24,6 +24,4 @@ export class FeedResponseDto {
   current: IndexResponseDto | null;
   prevId: number | null;
   nextId: number | null;
-  hasPrev: boolean;
-  hasNext: boolean;
 }
