@@ -12,6 +12,7 @@ export class IndexResponseDto {
   cardinality: number;
   fullDescription: string;
   likesCount: number;
+  isLiked: number; // Признак 0/1: лайкнута ли карточка текущим пользователем (1 - да, 0 - нет)
   isLikedByCurrentUser: boolean;
   authorId: number | null;
   authorUsername: string | null;

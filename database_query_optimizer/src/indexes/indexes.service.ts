@@ -178,6 +178,7 @@ export class IndexesService implements OnModuleInit {
       cardinality: Number(entity.cardinality || 0),
       fullDescription: entity.fullDescription ?? '',
       likesCount: Number(entity.likesCount || 0),
+      isLiked: isLiked ? 1 : 0, // Числовой признак 0/1: лайкнута ли карточка
       isLikedByCurrentUser: isLiked,
       authorId: entity.authorId ?? null,
       authorUsername: authorUsername,
