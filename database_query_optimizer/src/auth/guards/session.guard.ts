@@ -22,9 +22,12 @@ export class SessionGuard implements CanActivate {
     // 1. Ищем sessionId в Cookie (по методичке cookie sessionId)
     let sessionId = req.cookies?.sessionId;
 
-    // 2. Fallback: поддержка куки connect.sid или заголовка Authorization для Postman/Swagger
+    // 2. Fallback: поддержка куки connect.sid или заголовка sessionId для Postman/Swagger
     if (!sessionId && req.cookies?.['connect.sid']) {
       sessionId = req.cookies['connect.sid'];
+    }
+    if (!sessionId && req.headers['sessionid']) {
+      sessionId = String(req.headers['sessionid']).trim();
     }
     if (!sessionId && req.headers.authorization) {
       const auth = req.headers.authorization;

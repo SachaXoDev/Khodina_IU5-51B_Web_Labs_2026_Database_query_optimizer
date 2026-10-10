@@ -1,0 +1,71 @@
+@startuml sequence_diagram_lab4
+skinparam monochrome false
+skinparam roundcorner 5
+skinparam sequenceMessageAlign center
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam BoxPadding 10
+skinparam ParticipantPadding 15
+
+title sd Диаграмма последовательности (ЛР-4)
+
+participant "Фронтенд\n(Гость)" as Guest
+participant "Фронтенд\n(Создатель)" as Creator
+participant ": Домен\nprofile" as Profile
+participant ": Домен\nindexes" as Indexes
+participant ": Redis\n(Сессии)" as Redis
+
+== 1. Аутентификация создателя ==
+Creator -> Profile : 1: POST /api/auth/login(dto: { username, password })
+activate Profile
+Profile -> Redis : 2: create(sessionId, userId=1, ttl=3600)
+activate Redis
+Redis --> Profile : 3: OK (сессия сохранена)
+deactivate Redis
+Profile --> Creator : 4: 200 OK (Set-Cookie: sessionId)\n{ sessionId, user: { id: 1, role: 'admin' } }
+deactivate Profile
+
+== 2. Получение каталога с фильтрацией ==
+Creator -> Indexes : 5: GET /api/indexes(filters: { search: 'email', indexType: 'B-Tree' })
+activate Indexes
+Indexes --> Creator : 6: 200 OK JSON Список индексов\n[ { id: 1, indexName: 'idx_users_email', isOwner: 1, ... } ]
+deactivate Indexes
+
+== 3. Добавление новой услуги с медиафайлами (черновик) ==
+Creator -> Indexes : 7: POST /api/indexes(dto: CreateDraftDto, image, video)
+activate Indexes
+note over Indexes : authorId автозаполняется из сессии Redis
+Indexes --> Creator : 8: 201 Created JSON Черновик создан\n{ id: 19, status: 'draft', authorId: 1 }
+deactivate Indexes
+
+== 4. Получение полей черновика ==
+Creator -> Indexes : 9: GET /api/indexes/draft()
+activate Indexes
+Indexes --> Creator : 10: 200 OK JSON Поля черновика\n{ id: 19, indexName: 'idx_new_feature_draft' }
+deactivate Indexes
+
+== 5. Публикация услуги создателем ==
+Creator -> Indexes : 11: PUT /api/indexes/19/publish(dto: PublishIndexDto)
+activate Indexes
+Indexes --> Creator : 12: 200 OK JSON Услуга опубликована\n{ id: 19, status: 'published', publishedAt: '2026-10-10...' }
+deactivate Indexes
+
+== 6. Получение ленты без ID (первая карточка) ==
+Creator -> Indexes : 13: GET /api/indexes/feed()
+activate Indexes
+Indexes --> Creator : 14: 200 OK JSON Первая карточка ленты\n{ current: { id: 1, isOwner: 1 }, prevId: 7, nextId: 2 }
+deactivate Indexes
+
+== 7. Получение следующей карточки ленты по ID ==
+Creator -> Indexes : 15: GET /api/indexes/feed?id=1&next=true()
+activate Indexes
+Indexes --> Creator : 16: 200 OK JSON Следующая карточка ленты\n{ current: { id: 2, isOwner: 0 }, prevId: 1, nextId: 3 }
+deactivate Indexes
+
+== 8. Постановка отметки «Нравится» (лайк) ==
+Creator -> Indexes : 17: POST /api/indexes/1/like(dto: { value: 1 })
+activate Indexes
+Indexes --> Creator : 18: 200 OK JSON Лайк обновлен\n{ id: 1, likesCount: 6, isLiked: 1 }
+deactivate Indexes
+
+@enduml

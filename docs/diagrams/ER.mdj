@@ -3416,6 +3416,1097 @@
               "name": "POST /api/users/login"
             }
           ]
+        },
+        {
+          "_type": "UMLCollaboration",
+          "_id": "AAAAAAG_seq_collab_lab4",
+          "name": "Последовательность ЛР4",
+          "_parent": {
+            "$ref": "AAAAAAFF+qBWK6M3Z8Y="
+          },
+          "ownedElements": [
+            {
+              "_type": "UMLInteraction",
+              "_id": "AAAAAAG_seq_interaction_lab4",
+              "name": "Бизнес-процесс веб-сервиса",
+              "_parent": {
+                "$ref": "AAAAAAG_seq_collab_lab4"
+              },
+              "lifelines": [
+                {
+                  "_type": "UMLLifeline",
+                  "_id": "AAAAAAG_ll_guest",
+                  "name": "Фронтенд (Гость)",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  }
+                },
+                {
+                  "_type": "UMLLifeline",
+                  "_id": "AAAAAAG_ll_creator",
+                  "name": "Фронтенд (Создатель)",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  }
+                },
+                {
+                  "_type": "UMLLifeline",
+                  "_id": "AAAAAAG_ll_domain_profile",
+                  "name": ": Домен profile",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "represent": {
+                    "$ref": "AAAAAAG62a02555c4f043ef8"
+                  }
+                },
+                {
+                  "_type": "UMLLifeline",
+                  "_id": "AAAAAAG_ll_domain_indexes",
+                  "name": ": Домен indexes",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "represent": {
+                    "$ref": "AAAAAAG7ae18e3476f24f378"
+                  }
+                },
+                {
+                  "_type": "UMLLifeline",
+                  "_id": "AAAAAAG_ll_redis",
+                  "name": ": Redis (Хранилище сессий)",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  }
+                }
+              ],
+              "messages": [
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_01",
+                  "name": "POST /api/auth/login",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_creator"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_domain_profile"
+                  },
+                  "messageSort": "synchCall",
+                  "arguments": "dto: { username, password }",
+                  "signature": {
+                    "$ref": "AAAAAAGf94d8d18ad4547c9a"
+                  }
+                },
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_02",
+                  "name": "createSession",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_domain_profile"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_redis"
+                  },
+                  "messageSort": "synchCall",
+                  "arguments": "sessionId, userId=1, ttl=3600"
+                },
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_03",
+                  "name": "OK (сессия сохранена)",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_redis"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_domain_profile"
+                  },
+                  "messageSort": "reply",
+                  "arguments": ""
+                },
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_04",
+                  "name": "200 OK (Set-Cookie: sessionId)",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_domain_profile"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_creator"
+                  },
+                  "messageSort": "reply",
+                  "arguments": "sessionId, user: { id: 1, role: 'admin' }"
+                },
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_05",
+                  "name": "GET /api/indexes",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_creator"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_domain_indexes"
+                  },
+                  "messageSort": "synchCall",
+                  "arguments": "filters: { search: 'email', indexType: 'B-Tree' }",
+                  "signature": {
+                    "$ref": "AAAAAAG3e8e59273d3341ef8"
+                  }
+                },
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_06",
+                  "name": "200 OK JSON Список индексов",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_domain_indexes"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_creator"
+                  },
+                  "messageSort": "reply",
+                  "arguments": "items: [ { id: 1, isOwner: 1, ... } ]"
+                },
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_07",
+                  "name": "POST /api/indexes (создать с файлами)",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_creator"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_domain_indexes"
+                  },
+                  "messageSort": "synchCall",
+                  "arguments": "dto: CreateDraftDto, image, video",
+                  "signature": {
+                    "$ref": "AAAAAAGac2a61637dbf4b32a"
+                  }
+                },
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_08",
+                  "name": "201 Created JSON Черновик создан",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_domain_indexes"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_creator"
+                  },
+                  "messageSort": "reply",
+                  "arguments": "draft: { id: 19, status: 'draft', authorId: 1 }"
+                },
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_09",
+                  "name": "GET /api/indexes/draft",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_creator"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_domain_indexes"
+                  },
+                  "messageSort": "synchCall",
+                  "arguments": "",
+                  "signature": {
+                    "$ref": "AAAAAAGfff33b06487d44d58"
+                  }
+                },
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_10",
+                  "name": "200 OK JSON Поля черновика",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_domain_indexes"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_creator"
+                  },
+                  "messageSort": "reply",
+                  "arguments": "draft: { id: 19, indexName: 'idx_test' }"
+                },
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_11",
+                  "name": "PUT /api/indexes/19/publish",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_creator"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_domain_indexes"
+                  },
+                  "messageSort": "synchCall",
+                  "arguments": "id: 19, dto: PublishIndexDto",
+                  "signature": {
+                    "$ref": "AAAAAAGd560417f01944d9fb"
+                  }
+                },
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_12",
+                  "name": "200 OK JSON Услуга опубликована",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_domain_indexes"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_creator"
+                  },
+                  "messageSort": "reply",
+                  "arguments": "published: { id: 19, status: 'published' }"
+                },
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_13",
+                  "name": "GET /api/indexes/feed",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_creator"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_domain_indexes"
+                  },
+                  "messageSort": "synchCall",
+                  "arguments": "",
+                  "signature": {
+                    "$ref": "AAAAAAGae89ac9021984b239"
+                  }
+                },
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_14",
+                  "name": "200 OK JSON Первая карточка ленты",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_domain_indexes"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_creator"
+                  },
+                  "messageSort": "reply",
+                  "arguments": "feed: { current: { id: 1 }, prevId: 7, nextId: 2 }"
+                },
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_15",
+                  "name": "GET /api/indexes/feed?id=1&next=true",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_creator"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_domain_indexes"
+                  },
+                  "messageSort": "synchCall",
+                  "arguments": "id: 1, next: true",
+                  "signature": {
+                    "$ref": "AAAAAAGae89ac9021984b239"
+                  }
+                },
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_16",
+                  "name": "200 OK JSON Следующая карточка ленты",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_domain_indexes"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_creator"
+                  },
+                  "messageSort": "reply",
+                  "arguments": "feed: { current: { id: 2 }, prevId: 1, nextId: 3 }"
+                },
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_17",
+                  "name": "POST /api/indexes/1/like",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_creator"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_domain_indexes"
+                  },
+                  "messageSort": "synchCall",
+                  "arguments": "id: 1, dto: { value: 1 }",
+                  "signature": {
+                    "$ref": "AAAAAAGf7691cb581f34f639"
+                  }
+                },
+                {
+                  "_type": "UMLMessage",
+                  "_id": "AAAAAAG_msg_18",
+                  "name": "200 OK JSON Лайк обновлен",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "source": {
+                    "$ref": "AAAAAAG_ll_domain_indexes"
+                  },
+                  "target": {
+                    "$ref": "AAAAAAG_ll_creator"
+                  },
+                  "messageSort": "reply",
+                  "arguments": "index: { id: 1, likesCount: 6, isLiked: 1 }"
+                }
+              ],
+              "ownedElements": [
+                {
+                  "_type": "UMLSequenceDiagram",
+                  "_id": "AAAAAAG_seq_diagram_lab4",
+                  "_parent": {
+                    "$ref": "AAAAAAG_seq_interaction_lab4"
+                  },
+                  "name": "Диаграмма последовательности (ЛР-4)",
+                  "visible": true,
+                  "defaultDiagram": false,
+                  "ownedViews": [
+                    {
+                      "_type": "UMLLifelineView",
+                      "_id": "AAAAAAG_view_ll_0",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_ll_guest"
+                      },
+                      "visible": true,
+                      "left": 60,
+                      "top": 40,
+                      "width": 140,
+                      "height": 920,
+                      "nameCompartment": {
+                        "_type": "UMLNameCompartmentView",
+                        "_id": "AAAAAAG_nc_0",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_ll_0"
+                        },
+                        "visible": true,
+                        "left": 60,
+                        "top": 40,
+                        "width": 140,
+                        "height": 40,
+                        "nameLabel": {
+                          "_type": "LabelView",
+                          "_id": "AAAAAAG_nl_0",
+                          "_parent": {
+                            "$ref": "AAAAAAG_nc_0"
+                          },
+                          "text": "Фронтенд (Гость)"
+                        }
+                      }
+                    },
+                    {
+                      "_type": "UMLLifelineView",
+                      "_id": "AAAAAAG_view_ll_1",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_ll_creator"
+                      },
+                      "visible": true,
+                      "left": 240,
+                      "top": 40,
+                      "width": 140,
+                      "height": 920,
+                      "nameCompartment": {
+                        "_type": "UMLNameCompartmentView",
+                        "_id": "AAAAAAG_nc_1",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_ll_1"
+                        },
+                        "visible": true,
+                        "left": 240,
+                        "top": 40,
+                        "width": 140,
+                        "height": 40,
+                        "nameLabel": {
+                          "_type": "LabelView",
+                          "_id": "AAAAAAG_nl_1",
+                          "_parent": {
+                            "$ref": "AAAAAAG_nc_1"
+                          },
+                          "text": "Фронтенд (Создатель)"
+                        }
+                      }
+                    },
+                    {
+                      "_type": "UMLLifelineView",
+                      "_id": "AAAAAAG_view_ll_2",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_ll_domain_profile"
+                      },
+                      "visible": true,
+                      "left": 470,
+                      "top": 40,
+                      "width": 140,
+                      "height": 920,
+                      "nameCompartment": {
+                        "_type": "UMLNameCompartmentView",
+                        "_id": "AAAAAAG_nc_2",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_ll_2"
+                        },
+                        "visible": true,
+                        "left": 470,
+                        "top": 40,
+                        "width": 140,
+                        "height": 40,
+                        "nameLabel": {
+                          "_type": "LabelView",
+                          "_id": "AAAAAAG_nl_2",
+                          "_parent": {
+                            "$ref": "AAAAAAG_nc_2"
+                          },
+                          "text": ": Домен profile"
+                        }
+                      }
+                    },
+                    {
+                      "_type": "UMLLifelineView",
+                      "_id": "AAAAAAG_view_ll_3",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_ll_domain_indexes"
+                      },
+                      "visible": true,
+                      "left": 740,
+                      "top": 40,
+                      "width": 140,
+                      "height": 920,
+                      "nameCompartment": {
+                        "_type": "UMLNameCompartmentView",
+                        "_id": "AAAAAAG_nc_3",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_ll_3"
+                        },
+                        "visible": true,
+                        "left": 740,
+                        "top": 40,
+                        "width": 140,
+                        "height": 40,
+                        "nameLabel": {
+                          "_type": "LabelView",
+                          "_id": "AAAAAAG_nl_3",
+                          "_parent": {
+                            "$ref": "AAAAAAG_nc_3"
+                          },
+                          "text": ": Домен indexes"
+                        }
+                      }
+                    },
+                    {
+                      "_type": "UMLLifelineView",
+                      "_id": "AAAAAAG_view_ll_4",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_ll_redis"
+                      },
+                      "visible": true,
+                      "left": 1030,
+                      "top": 40,
+                      "width": 160,
+                      "height": 920,
+                      "nameCompartment": {
+                        "_type": "UMLNameCompartmentView",
+                        "_id": "AAAAAAG_nc_4",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_ll_4"
+                        },
+                        "visible": true,
+                        "left": 1030,
+                        "top": 40,
+                        "width": 160,
+                        "height": 40,
+                        "nameLabel": {
+                          "_type": "LabelView",
+                          "_id": "AAAAAAG_nl_4",
+                          "_parent": {
+                            "$ref": "AAAAAAG_nc_4"
+                          },
+                          "text": ": Redis (Хранилище сессий)"
+                        }
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_0",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_01"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_1"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_2"
+                      },
+                      "points": "310:110;540:110",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_0",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_0"
+                        },
+                        "text": "1: POST /api/auth/login(dto: { username, password })",
+                        "left": 330,
+                        "top": 92,
+                        "visible": true
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_1",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_02"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_2"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_4"
+                      },
+                      "points": "540:154;1100:154",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_1",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_1"
+                        },
+                        "text": "2: createSession(sessionId, userId=1, ttl=3600)",
+                        "left": 560,
+                        "top": 136,
+                        "visible": true
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_2",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_03"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_4"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_2"
+                      },
+                      "points": "1100:198;540:198",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_2",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_2"
+                        },
+                        "text": "3: OK (сессия сохранена)",
+                        "left": 560,
+                        "top": 180,
+                        "visible": true
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_3",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_04"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_2"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_1"
+                      },
+                      "points": "540:242;310:242",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_3",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_3"
+                        },
+                        "text": "4: 200 OK (Set-Cookie: sessionId)(sessionId, user: { id: 1, role: 'admin' })",
+                        "left": 330,
+                        "top": 224,
+                        "visible": true
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_4",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_05"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_1"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_3"
+                      },
+                      "points": "310:286;810:286",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_4",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_4"
+                        },
+                        "text": "5: GET /api/indexes(filters: { search: 'email', indexType: 'B-Tree' })",
+                        "left": 330,
+                        "top": 268,
+                        "visible": true
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_5",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_06"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_3"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_1"
+                      },
+                      "points": "810:330;310:330",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_5",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_5"
+                        },
+                        "text": "6: 200 OK JSON Список индексов(items: [ { id: 1, isOwner: 1, ... } ])",
+                        "left": 330,
+                        "top": 312,
+                        "visible": true
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_6",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_07"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_1"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_3"
+                      },
+                      "points": "310:374;810:374",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_6",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_6"
+                        },
+                        "text": "7: POST /api/indexes (создать с файлами)(dto: CreateDraftDto, image, video)",
+                        "left": 330,
+                        "top": 356,
+                        "visible": true
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_7",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_08"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_3"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_1"
+                      },
+                      "points": "810:418;310:418",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_7",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_7"
+                        },
+                        "text": "8: 201 Created JSON Черновик создан(draft: { id: 19, status: 'draft', authorId: 1 })",
+                        "left": 330,
+                        "top": 400,
+                        "visible": true
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_8",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_09"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_1"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_3"
+                      },
+                      "points": "310:462;810:462",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_8",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_8"
+                        },
+                        "text": "9: GET /api/indexes/draft",
+                        "left": 330,
+                        "top": 444,
+                        "visible": true
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_9",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_10"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_3"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_1"
+                      },
+                      "points": "810:506;310:506",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_9",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_9"
+                        },
+                        "text": "10: 200 OK JSON Поля черновика(draft: { id: 19, indexName: 'idx_test' })",
+                        "left": 330,
+                        "top": 488,
+                        "visible": true
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_10",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_11"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_1"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_3"
+                      },
+                      "points": "310:550;810:550",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_10",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_10"
+                        },
+                        "text": "11: PUT /api/indexes/19/publish(id: 19, dto: PublishIndexDto)",
+                        "left": 330,
+                        "top": 532,
+                        "visible": true
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_11",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_12"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_3"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_1"
+                      },
+                      "points": "810:594;310:594",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_11",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_11"
+                        },
+                        "text": "12: 200 OK JSON Услуга опубликована(published: { id: 19, status: 'published' })",
+                        "left": 330,
+                        "top": 576,
+                        "visible": true
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_12",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_13"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_1"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_3"
+                      },
+                      "points": "310:638;810:638",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_12",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_12"
+                        },
+                        "text": "13: GET /api/indexes/feed",
+                        "left": 330,
+                        "top": 620,
+                        "visible": true
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_13",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_14"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_3"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_1"
+                      },
+                      "points": "810:682;310:682",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_13",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_13"
+                        },
+                        "text": "14: 200 OK JSON Первая карточка ленты(feed: { current: { id: 1 }, prevId: 7, nextId: 2 })",
+                        "left": 330,
+                        "top": 664,
+                        "visible": true
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_14",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_15"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_1"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_3"
+                      },
+                      "points": "310:726;810:726",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_14",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_14"
+                        },
+                        "text": "15: GET /api/indexes/feed?id=1&next=true(id: 1, next: true)",
+                        "left": 330,
+                        "top": 708,
+                        "visible": true
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_15",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_16"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_3"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_1"
+                      },
+                      "points": "810:770;310:770",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_15",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_15"
+                        },
+                        "text": "16: 200 OK JSON Следующая карточка ленты(feed: { current: { id: 2 }, prevId: 1, nextId: 3 })",
+                        "left": 330,
+                        "top": 752,
+                        "visible": true
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_16",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_17"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_1"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_3"
+                      },
+                      "points": "310:814;810:814",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_16",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_16"
+                        },
+                        "text": "17: POST /api/indexes/1/like(id: 1, dto: { value: 1 })",
+                        "left": 330,
+                        "top": 796,
+                        "visible": true
+                      }
+                    },
+                    {
+                      "_type": "UMLSeqMessageView",
+                      "_id": "AAAAAAG_view_msg_17",
+                      "_parent": {
+                        "$ref": "AAAAAAG_seq_diagram_lab4"
+                      },
+                      "model": {
+                        "$ref": "AAAAAAG_msg_18"
+                      },
+                      "visible": true,
+                      "source": {
+                        "$ref": "AAAAAAG_view_ll_3"
+                      },
+                      "target": {
+                        "$ref": "AAAAAAG_view_ll_1"
+                      },
+                      "points": "810:858;310:858",
+                      "nameLabel": {
+                        "_type": "EdgeLabelView",
+                        "_id": "AAAAAAG_el_17",
+                        "_parent": {
+                          "$ref": "AAAAAAG_view_msg_17"
+                        },
+                        "text": "18: 200 OK JSON Лайк обновлен(index: { id: 1, likesCount: 6, isLiked: 1 })",
+                        "left": 330,
+                        "top": 840,
+                        "visible": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         }
       ]
     },

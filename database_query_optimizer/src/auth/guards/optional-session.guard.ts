@@ -17,7 +17,15 @@ export class OptionalSessionGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
 
+    // 1. Проверяем куку sessionId или connect.sid
     let sessionId = req.cookies?.sessionId || req.cookies?.['connect.sid'];
+
+    // 2. Проверяем кастомный заголовок sessionId (если передан как Header в Postman)
+    if (!sessionId && req.headers['sessionid']) {
+      sessionId = String(req.headers['sessionid']).trim();
+    }
+
+    // 3. Проверяем Authorization: Bearer <sessionId>
     if (!sessionId && req.headers.authorization) {
       const auth = req.headers.authorization;
       sessionId = auth.startsWith('Bearer ') ? auth.substring(7).trim() : auth.trim();

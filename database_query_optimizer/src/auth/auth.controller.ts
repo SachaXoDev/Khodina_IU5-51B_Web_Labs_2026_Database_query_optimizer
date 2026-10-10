@@ -43,17 +43,17 @@ export class AuthController {
   ) {
     const { sessionId, user } = await this.authService.login(dto);
 
-    // Установка HttpOnly Cookie согласно методичке
+    // Установка HttpOnly Cookie строго по методичке
     res.cookie('sessionId', sessionId, {
       httpOnly: true,
-      secure: false, // для локальной разработки по HTTP
+      secure: false, // для локальной разработки
       sameSite: 'lax',
       maxAge: 3600 * 1000, // 1 час
     });
 
+    // Возвращаем строго { sessionId, user } без лишних полей message
     return {
-      message: 'Успешный вход в систему',
-      sessionId, // возвращаем также в JSON для удобства Swagger / Insomnia
+      sessionId,
       user,
     };
   }
@@ -71,7 +71,7 @@ export class AuthController {
       await this.authService.logout(sessionId);
     }
     res.clearCookie('sessionId');
-    return { ok: true, message: 'Сессия успешно завершена' };
+    return { ok: true };
   }
 
   @Get('me')

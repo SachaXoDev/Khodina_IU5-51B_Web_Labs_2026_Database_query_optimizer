@@ -36,7 +36,7 @@ import { IndexResponseDto, FeedResponseDto } from './dto/index-response.dto';
 import { SessionGuard, AuthenticatedRequest } from '../auth/guards/session.guard';
 import { OptionalSessionGuard } from '../auth/guards/optional-session.guard';
 
-@ApiTags('Database Indexes')
+@ApiTags('Indexes')
 @Controller('indexes')
 export class IndexesController {
   constructor(private readonly indexesService: IndexesService) {}
