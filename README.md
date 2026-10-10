@@ -1,16 +1,18 @@
-# Лабораторная работа №3: Разработка REST API веб-сервиса на NestJS
+# Лабораторная работа №4: Завершение бэкенда для SPA (Аутентификация, Сессии в Redis, Cookies, Swagger, ТЗ)
 
 ## Тема проекта
-**«Оптимизатор запросов баз данных (Database Query Optimizer)»** — REST API веб-сервис для каталога рекомендуемых индексов PostgreSQL, управления черновиками, публикации, циклической ленты, системы лайков, медиа-хранилища MinIO и регистрации пользователей для дальнейшего использования в Single Page Application (SPA).
+**«Оптимизатор запросов баз данных (Indexes API)»** — REST API веб-сервис для каталогизации и выбора оптимальных индексов реляционных СУБД (B-Tree, Hash, BRIN, GIN), сессионной аутентификации в Redis с поддержкой HttpOnly Cookies, интерактивной документации Swagger (OpenAPI 3.0), объектного хранилища медиафайлов MinIO и разграничения прав доступа (Гость / Создатель).
 
 ---
 
 ## 1. Стек технологий
-- **Фреймворк:** NestJS 10 (TypeScript)
-- **СУБД:** PostgreSQL 16
-- **ORM:** TypeORM 0.3
-- **Объектное хранилище медиа:** MinIO (S3-compatible)
-- **Валидация и сериализация:** `class-validator`, `class-transformer`
+- **Бэкенд фреймворк:** NestJS 10 (TypeScript 5)
+- **СУБД:** PostgreSQL 16 (TypeORM 0.3)
+- **Сессионное хранилище:** Redis 7 (`ioredis`)
+- **Объектное S3-хранилище медиа:** MinIO
+- **Аутентификация:** Сессии (stateful), HttpOnly Cookies (`cookie-parser`, UUID v4)
+- **Спецификация API:** Swagger UI / OpenAPI 3.0 (`@nestjs/swagger`)
+- **Валидация данных:** `class-validator`, `class-transformer`
 - **Контейнеризация:** Docker & Docker Compose
 
 ---
@@ -20,145 +22,122 @@
 ```text
 database_query_optimizer/
 ├── src/
-│   ├── common/
-│   │   └── current-user.singleton.ts     # Функция-singleton с константой пользователя (ID = 1)
-│   ├── indexes/                          # Домен «Услуги / Индексы БД»
+│   ├── auth/                             # Модуль аутентификации и авторизации
+│   │   ├── guards/
+│   │   │   ├── session.guard.ts          # Защита эндпоинтов создателя (проверка сессии в Redis)
+│   │   │   └── optional-session.guard.ts # Опциональная сессия для гостей и авторов (вычисление isOwner)
+│   │   ├── auth.controller.ts            # Маршруты /api/auth (login, logout, register, me)
+│   │   ├── auth.service.ts               # Бизнес-логика входа, генерации сессий в Redis и валидации
+│   │   └── auth.module.ts
+│   ├── session/                          # Модуль работы с сессионным хранилищем Redis
+│   │   ├── session.service.ts            # Redis клиент (ioredis): create (TTL 3600), getUserId, destroy
+│   │   └── session.module.ts             # Глобальный модуль Redis
+│   ├── indexes/                          # Домен «Индексы БД / Услуги»
 │   │   ├── dto/
-│   │   │   ├── create-draft.dto.ts       # Валидация создания черновика (кнопка «Далее»)
-│   │   │   ├── publish-index.dto.ts      # Валидация публикации услуги
-│   │   │   ├── index-filters.dto.ts      # Фильтры каталога (?search, ?indexType)
+│   │   │   ├── create-draft.dto.ts       # Валидация и Swagger-схема создания черновика
+│   │   │   ├── publish-index.dto.ts      # Валидация и Swagger-схема публикации
+│   │   │   ├── index-filters.dto.ts      # Фильтры каталога (?search, ?indexType, ?minCardinality)
 │   │   │   ├── like-index.dto.ts         # Валидация лайка (value: 0 | 1)
-│   │   │   └── index-response.dto.ts     # Сериализатор услуги и ленты (скрытие системных полей)
+│   │   │   └── index-response.dto.ts     # DTO ответа услуги (isOwner: 0/1, isLiked: 0/1) и ленты
 │   │   ├── entities/
-│   │   │   ├── database-index.entity.ts  # Сущность «Индекс БД» (компактная структура)
-│   │   │   └── index-like.entity.ts      # Таблица связей м-м с отдельным PK
-│   │   ├── indexes.controller.ts         # REST API маршруты (/api/indexes)
-│   │   ├── indexes.service.ts            # Бизнес-логика через ORM TypeORM
-│   │   ├── minio.service.ts              # Загрузка картинок/видео в MinIO с латинскими именами
+│   │   │   ├── database-index.entity.ts  # Сущность «Индекс БД» в PostgreSQL
+│   │   │   └── index-like.entity.ts      # Сущность лайка с отдельным первичным ключом
+│   │   ├── indexes.controller.ts         # REST API маршруты (/api/indexes) с тегом Swagger Indexes
+│   │   ├── indexes.service.ts            # Бизнес-логика, автозаполнение authorId из сессии
+│   │   ├── minio.service.ts              # Прямые постоянные URL объектов в MinIO
 │   │   └── indexes.module.ts
-│   ├── users/                            # Домен «Пользователи»
-│   │   ├── dto/
-│   │   │   ├── register-user.dto.ts      # Регистрация (username, password, role)
-│   │   │   ├── login-user.dto.ts         # Заглушка аутентификации
-│   │   │   └── user-response.dto.ts      # Ответ без пароля (@Exclude)
-│   │   ├── entities/
-│   │   │   └── user.entity.ts            # Сущность User (id, username, password, role)
-│   │   ├── users.controller.ts           # REST API маршруты (/api/users)
-│   │   ├── users.service.ts              # Бизнес-логика пользователей
-│   │   └── users.module.ts
-│   ├── app.module.ts                     # Главный модуль с подключением TypeORM
-│   └── main.ts                           # GlobalPrefix('api'), ValidationPipe, ClassSerializer
-├── public/media/                         # Начальные тестовые медиафайлы
-├── docker-compose.yml                    # Контейнеры Postgres, Adminer, MinIO
-├── lab3_postman_collection.json          # Готовая коллекция из 10+2 запросов для Postman
-└── .env                                  # Переменные окружения
+│   ├── users/                            # Домен пользователей
+│   │   ├── entities/user.entity.ts       # Сущность пользователя (id, username, password, role)
+│   │   └── ...
+│   ├── app.module.ts                     # Главный модуль с подключением TypeORM, Redis и Config
+│   └── main.ts                           # GlobalPrefix('api'), SwaggerModule, cookieParser, CORS
+├── docker-compose.yml                    # Контейнеры Postgres, Adminer, MinIO, Redis
+└── docs/                                 # Диаграммы StarUML (РИП.mdj), Sequence диаграмма, вопросы ЛР4
 ```
 
 ---
 
-## 3. Требования ТЗ и их реализация
+## 3. Требования ТЗ и их реализация в ЛР-4
 
-1. **Глобальный префикс `/api`**: Все эндпоинты начинаются с `/api/` (`app.setGlobalPrefix('api')`).
-2. **REST API**: Использованы стандартные HTTP-методы (`GET`, `POST`, `PUT`, `DELETE`) и статус-коды (`200 OK`, `201 Created`, `204 No Content`, `400 Bad Request`, `403 Forbidden`, `404 Not Found`, `409 Conflict`). В JSON-ответах не передаются коды статусов или служебные текстовые сообщения ошибок — статус запроса однозначно определяется HTTP-кодом в заголовке ответа.
-3. **Консистентная структура JSON**: Все ответы сущности услуги возвращают строго одинаковый набор полей (включая черновики и запросы с опущенными опциональными параметрами). Внутренний статус записи в БД (`draft`/`published`/`deleted`) используется исключительно внутри сервиса и не утекает в JSON-ответ.
-4. **Функция-Singleton для текущего пользователя**: Класс `CurrentUserSingleton` и функция `getCurrentUserId()` фиксируют пользователя-создателя константой `CURRENT_USER_ID = 1` для всех методов.
-5. **Защита системных полей**: Клиенту запрещено изменять `id`, `status`, `authorId`, `createdAt`, `publishedAt`. Включён `ValidationPipe({ forbidNonWhitelisted: true })`.
-6. **Бизнес-правила смены статусов**:
-   - `POST /api/indexes` — создание черновика услуги (в БД фиксируется `status: draft`).
-   - `PUT /api/indexes/:id/publish` — перевод строго `draft -> published` в БД. Повторная публикация или возврат в черновик запрещены.
-7. **Мягкое удаление (Soft Delete)**: `DELETE /api/indexes/:id` выставляет `status = 'deleted'` в БД и возвращает `204 No Content`. Удаление разрешено только для записей, созданных текущим пользователем (`authorId === currentUserId`). Удалённые услуги клиенту больше не возвращаются.
-8. **Хранилище MinIO**: Изображения и видео выгружаются в бакет MinIO; имена файлов генерируются строго на латинице (например, `index_image_171000_abc.jpg`) и сохраняются в колонках БД `image_url` и `video_url`.
-9. **Система лайков**: `POST /api/indexes/:id/like` принимает `value: 1` (поставить лайк) и `value: 0` (отменить лайк) от текущего пользователя.
+1. **Сессионная аутентификация в Redis:**
+   * Метод `POST /api/auth/login` проверяет логин/пароль в PostgreSQL, генерирует случайный идентификатор сессии `sessionId` (UUID v4) и сохраняет его в Redis по ключу `session:<uuid>` со значением `userId` и временем жизни `TTL = 3600 с` (1 час).
+   * Клиенту выставляется кука `Set-Cookie: sessionId=...; HttpOnly; SameSite=Lax; Path=/`.
+   * Флаг `HttpOnly` запрещает доступ к куке из JavaScript, исключая кражу сессии при XSS-атаках.
+2. **Мгновенный Logout:**
+   * Метод `POST /api/auth/logout` немедленно удаляет сессионный ключ из Redis (`DEL session:...`) и зачищает куку `sessionId`, предотвращая повторное использование скомпрометированных токенов.
+3. **Разграничение прав доступа (Гость / Создатель):**
+   * **Гость (без сессии/куки):** доступны только методы чтения `GET /api/indexes`, `GET /api/indexes/feed`, `GET /api/indexes/:id`. Во всех карточках выставляется `isOwner: 0` и `isLiked: 0`.
+   * Попытка гостя вызвать методы модификации (`POST /api/indexes`, `PUT /api/indexes/:id/publish`, `DELETE`, `POST /like`) прерывается защитным гардом `SessionGuard` с кодом **`401 Unauthorized`**.
+   * **Создатель (авторизованный пользователь):** может создавать черновики, публиковать и удалять свои услуги.
+   * Попытка изменить или опубликовать чужую услугу прерывается с кодом **`403 Forbidden`**.
+4. **Автозаполнение автора (`authorId`):**
+   * При создании черновика (`POST /api/indexes`) поле автора не передаётся с фронтенда, а автоматически извлекается бэкендом из активной сессии Redis (`req.userId`) и сохраняется в БД.
+5. **Интерактивная документация Swagger (OpenAPI 3.0):**
+   * Документация доступна по адресу **`http://localhost:3000/api/docs`**.
+   * Настроена авторизация по кнопке **Authorize** через Cookie `sessionId`.
+   * Все эндпоинты сгруппированы по двум разделам: **`Authentication`** и **`Indexes`**.
+   * Подробно задокументированы все схемы DTO, параметры запросов и коды ответов (`200 OK`, `201 Created`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found`).
+6. **Диаграмма последовательности (Sequence Diagram):**
+   * Построена в StarUML (файл `РИП.mdj`) для всего бизнес-процесса без БД и нативного клиента.
+   * Линии жизни: `Фронтенд (гость)`, `Фронтенд (создатель)`, `: Домен users`, `: Домен indexes`.
+   * Свойства `signature` у каждого сообщения переиспользованы из операций классов диаграммы бэкенда (`POST Login`, `GET Indexes`, `POST Index`, `GET Draft`, `PUT Index`, `GET Feed`, `POST Like`).
 
 ---
 
 ## 4. Спецификация REST API маршрутов
 
-### Домен Услуги (`/api/indexes`):
-| Метод | URL | Описание |
-|---|---|---|
-| `GET` | `/api/indexes?search=...&indexType=...` | Список услуг с фильтрацией (только опубликованные, с флагом `isCreator`: 0 или 1) |
-| `GET` | `/api/indexes/feed` | Лента опубликованных услуг (без ID — первый элемент) |
-| `GET` | `/api/indexes/feed?id=1&next=true` | Переход к следующему элементу ленты по ID |
-| `GET` | `/api/indexes/draft` | Получение черновика текущего пользователя (без ID в URL) |
-| `GET` | `/api/indexes/:id` | Просмотр опубликованной услуги по ID |
-| `POST` | `/api/indexes` | Создание черновика с картинкой и видео (`multipart/form-data`) |
-| `PUT` | `/api/indexes/:id/publish` | Публикация черновика (`draft -> published`) |
-| `DELETE`| `/api/indexes/:id` | Мягкое удаление услуги (`soft delete`, только для услуг автора) |
-| `POST` | `/api/indexes/:id/like` | Постановка (`1`) или отмена (`0`) лайка |
-
-### Домен Пользователи (`/api/users`):
-| Метод | URL | Описание |
-|---|---|---|
-| `POST` | `/api/users/register` | Регистрация нового пользователя (логин, пароль, роль) |
-| `POST` | `/api/users/login` | Аутентификация (заглушка для лабораторной работы №4) |
-| `POST` | `/api/users/logout` | Деавторизация (заглушка для лабораторной работы №4) |
+| Метод | URL | Доступ | Входные данные | Описание |
+|---|---|---|---|---|
+| `POST` | `/api/auth/register` | Гость | `{ username, password, role? }` | Регистрация нового пользователя |
+| `POST` | `/api/auth/login` | Гость | `{ username, password }` | Вход: создание сессии в Redis, возврат `Set-Cookie: sessionId` |
+| `POST` | `/api/auth/logout` | Создатель | `Cookie: sessionId` | Выход: мгновенное удаление сессии из Redis |
+| `GET` | `/api/auth/me` | Создатель | `Cookie: sessionId` | Получение профиля текущего авторизованного пользователя |
+| `GET` | `/api/indexes` | Все | Query: `search`, `indexType`, `minCardinality` | Каталог опубликованных индексов с флагом `isOwner: 0/1` |
+| `GET` | `/api/indexes/feed` | Все | Query: `id`, `next=true` | Циклическая лента видеороликов индексов |
+| `GET` | `/api/indexes/draft` | Создатель | `Cookie: sessionId` | Получение черновика текущего пользователя |
+| `GET` | `/api/indexes/:id` | Все | Param: `id` | Детальный просмотр опубликованного индекса |
+| `POST` | `/api/indexes` | Создатель | `multipart/form-data`: поля + файлы | Создание черновика, `authorId` извлекается из сессии |
+| `PUT` | `/api/indexes/:id/publish` | Создатель (автор) | Param: `id`, Body: `publishDto` | Публикация черновика (`draft -> published`) |
+| `DELETE`| `/api/indexes/:id` | Создатель (автор) | Param: `id`, `Cookie: sessionId` | Мягкое логическое удаление индекса (`status = deleted`) |
+| `POST` | `/api/indexes/:id/like` | Создатель | Param: `id`, Body: `{ value: 1/0 }` | Постановка (`1`) или снятие (`0`) отметки «Нравится» |
 
 ---
 
-## 5. Структура таблиц базы данных
+## 5. Запуск и тестирование проекта
 
-### 1. `users`
-- `id` (integer, PK, auto-increment)
-- `username` (varchar, unique, not null)
-- `password` (varchar, not null) — скрыт от клиентов в REST-ответах через `@Exclude()`
-- `role` (varchar, default: `'user'`)
-
-### 2. `index_likes` (связь многие-ко-многим)
-- `id` (integer, отдельный PK, auto-increment)
-- `user_id` (integer, FK -> `users.id` ON DELETE RESTRICT)
-- `index_id` (integer, FK -> `database_indexes.id` ON DELETE RESTRICT)
-- Ограничение уникальности: `UNIQUE(user_id, index_id)`
-
-### 3. `database_indexes`
-- `id` (integer, PK, auto-increment)
-- `index_name` (varchar, not null) — обязательное поле по кнопке «Далее»
-- `short_description` (text, nullable)
-- `table_name` (varchar, default: `'users'`)
-- `index_type` (varchar, default: `'B-Tree'`)
-- `column_name` (varchar, default: `'id'`)
-- `cardinality` (integer, default: `0`)
-- `full_description` (text, nullable)
-- `status` (enum: `draft`, `published`, `deleted`)
-- `image_url` (varchar, nullable) — имя файла в MinIO на латинице
-- `video_url` (varchar, nullable) — имя файла в MinIO на латинице
-- `likes_count` (integer, default: `0`)
-- `author_id` (integer, FK -> `users.id` ON DELETE RESTRICT)
-- `created_at` (timestamp, системное поле)
-- `published_at` (timestamp, системное поле)
-
----
-
-## 6. Запуск и тестирование проекта
-
-### Шаг 1. Запуск инфраструктуры (Docker)
+### Шаг 1. Запуск инфраструктуры в Docker
 ```bash
 docker compose up -d
 ```
-Сервисы:
-- **PostgreSQL:** порт `5435`
-- **MinIO API:** порт `9000` (Web Console: `http://localhost:9001`, логин: `minioadmin`, пароль: `minioadminpassword`)
-- **Adminer:** `http://localhost:8081`
+Поднимаются 4 сервиса:
+- **PostgreSQL** — порт `5435`
+- **Adminer** — `http://localhost:8081`
+- **MinIO** — порт `9000` (API) и `9001` (Консоль)
+- **Redis** — порт `6379` (хранилище сессий)
 
-### Шаг 2. Запуск бэкенда
+### Шаг 2. Запуск бэкенда NestJS
 ```bash
 cd database_query_optimizer
 npm install
 npm run start:dev
 ```
-Сервер будет доступен по адресу: `http://localhost:3000/api`.
+Сервер будет доступен по адресу: **`http://localhost:3000/api`**.
 
-### Шаг 3. Тестирование через Postman / Insomnia
-В корне репозитория находится файл **`lab3_postman_collection.json`**.
-1. Откройте Postman ➔ нажмите **Import** ➔ выберите `lab3_postman_collection.json`.
-2. В коллекции представлены все 10 обязательных запросов для демонстрации (скриншоты 1–10).
+### Шаг 3. Документация Swagger UI
+Откройте браузер по адресу: **`http://localhost:3000/api/docs`**.
+1. Выполните метод `POST /api/auth/login` с логином `pg_expert` и паролем `password123`.
+2. Скопируйте полученный `sessionId`.
+3. Нажмите кнопку **Authorize** в правом верхнем углу, вставьте `sessionId` и сохраните.
+4. Теперь все защищенные методы создателя будут выполняться от имени авторизованного пользователя.
 
----
+### Шаг 4. Проверка содержимого Redis в консоли
+```bash
+# Список активных сессий
+docker exec lab_redis redis-cli KEYS "*"
 
-## 7. Диаграмма классов (UML)
-Диаграмма охватывает контроллеры по URL-доменам, интерфейсы, сервисы, функции-синглтоны, DTO, TypeORM-модели, таблицы PostgreSQL и 4 страницы SPA фронтенда.
-- Исходный код: [`docs/diagrams/class_diagram.puml`](docs/diagrams/class_diagram.puml)
-- Изображение: [`docs/diagrams/class_diagram.png`](docs/diagrams/class_diagram.png)
+# Просмотр ID пользователя в сессии
+docker exec lab_redis redis-cli GET "session:<ваш-uuid>"
 
-![Диаграмма классов](docs/diagrams/class_diagram.png)
-
+# Просмотр оставшегося времени жизни TTL (в секундах)
+docker exec lab_redis redis-cli TTL "session:<ваш-uuid>"
+```
