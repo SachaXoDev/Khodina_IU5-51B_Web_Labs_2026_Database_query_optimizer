@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { IndexesModule } from './indexes/indexes.module';
 import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
+import { SessionModule } from './session/session.module';
 import { DatabaseIndex } from './indexes/entities/database-index.entity';
 import { IndexLike } from './indexes/entities/index-like.entity';
 import { User } from './users/entities/user.entity';
@@ -30,6 +32,8 @@ import { User } from './users/entities/user.entity';
     }),
     IndexesModule,
     UsersModule,
+    AuthModule,
+    SessionModule,
   ],
 })
 export class AppModule {}

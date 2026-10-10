@@ -1,12 +1,12 @@
-import {
-  IsOptional,
-} from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty } from 'class-validator';
 
-/**
- * DTO для постановки или отмены лайка (POST /api/indexes/:id/like).
- * Поле value: 0 — отменяет лайк, 1 — ставит лайк.
- */
 export class LikeIndexDto {
-  @IsOptional()
-  value?: any;
+  @ApiProperty({
+    description: 'Флаг лайка: 1 — поставить отметку "Нравится", 0 — снять отметку',
+    example: 1,
+    enum: [0, 1],
+  })
+  @IsNotEmpty()
+  value: number | string;
 }

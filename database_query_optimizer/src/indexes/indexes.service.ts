@@ -12,7 +12,6 @@ import { DatabaseIndex, IndexStatus } from './entities/database-index.entity';
 import { IndexLike } from './entities/index-like.entity';
 import { User } from '../users/entities/user.entity';
 import { MinioService } from './minio.service';
-import { getCurrentUserId } from '../common/current-user.singleton';
 import { IndexFiltersDto } from './dto/index-filters.dto';
 import { CreateDraftDto } from './dto/create-draft.dto';
 import { PublishIndexDto } from './dto/publish-index.dto';
@@ -37,7 +36,7 @@ export class IndexesService implements OnModuleInit {
   }
 
   /**
-   * Инициализация начальных пользователей и опубликованных услуг (индексов)
+   * Инициализация начальных пользователей и опубликованных индексов
    */
   private async seedInitialData() {
     const userCount = await this.userRepository.count();
@@ -88,7 +87,7 @@ export class IndexesService implements OnModuleInit {
           imageUrl: 'index_orders_created_at.jpg',
           videoUrl: 'index_orders_created_at.mp4',
           status: IndexStatus.PUBLISHED,
-          authorId: 1,
+          authorId: 2, // Чужой автор для проверки 403 Forbidden
           likesCount: 3,
           publishedAt: new Date(),
         },
@@ -148,12 +147,14 @@ export class IndexesService implements OnModuleInit {
   }
 
   /**
-   * Преобразование Entity -> DTO с генерацией ссылок на MinIO и проверкой лайка
+   * Преобразование Entity -> DTO с прямыми ссылками на MinIO и расчётом флагов 0/1
    */
-  private async toDto(entity: DatabaseIndex, currentUserId: number): Promise<IndexResponseDto> {
-    const isLiked = await this.likeRepository.exists({
-      where: { indexId: entity.id, userId: currentUserId },
-    });
+  private async toDto(entity: DatabaseIndex, currentUserId?: number): Promise<IndexResponseDto> {
+    const isLiked = currentUserId
+      ? await this.likeRepository.exists({
+          where: { indexId: entity.id, userId: currentUserId },
+        })
+      : false;
 
     const imageUrl = await this.minioService.getPresignedUrl(entity.imageUrl);
     const videoUrl = await this.minioService.getPresignedUrl(entity.videoUrl);
@@ -163,6 +164,8 @@ export class IndexesService implements OnModuleInit {
       const user = await this.userRepository.findOne({ where: { id: entity.authorId } });
       authorUsername = user ? user.username : null;
     }
+
+    const isOwnerFlag = currentUserId && entity.authorId === currentUserId ? 1 : 0;
 
     return {
       id: entity.id,
@@ -178,11 +181,11 @@ export class IndexesService implements OnModuleInit {
       cardinality: Number(entity.cardinality || 0),
       fullDescription: entity.fullDescription ?? '',
       likesCount: Number(entity.likesCount || 0),
-      isLiked: isLiked ? 1 : 0, // Числовой признак 0/1: лайкнута ли карточка
+      isLiked: isLiked ? 1 : 0,
       isLikedByCurrentUser: isLiked,
       authorId: entity.authorId ?? null,
       authorUsername: authorUsername,
-      isOwner: entity.authorId === currentUserId ? 1 : 0,
+      isOwner: isOwnerFlag,
       createdAt: entity.createdAt,
       publishedAt: entity.publishedAt ?? null,
     };
@@ -190,10 +193,8 @@ export class IndexesService implements OnModuleInit {
 
   /**
    * 1. GET /api/indexes — список с фильтрацией (только опубликованные)
-   * Удаленные записи и черновики в список не попадают.
    */
-  async findAll(filters: IndexFiltersDto): Promise<IndexResponseDto[]> {
-    const currentUserId = getCurrentUserId(); // Использование функции-singleton
+  async findAll(filters: IndexFiltersDto, currentUserId?: number): Promise<IndexResponseDto[]> {
     const qb = this.indexRepository
       .createQueryBuilder('index')
       .leftJoinAndSelect('index.author', 'author')
@@ -222,13 +223,8 @@ export class IndexesService implements OnModuleInit {
 
   /**
    * 2. GET /api/indexes/feed — лента услуг (только опубликованные)
-   * Без id возвращает первый опубликованный элемент ленты.
-   * С id и ?next=true переходит к следующему элементу ленты.
    */
-  async getFeed(id?: number, next?: boolean): Promise<FeedResponseDto> {
-    const currentUserId = getCurrentUserId(); // Использование функции-singleton
-
-    // Получаем список ID всех опубликованных индексов
+  async getFeed(id?: number, next?: boolean, currentUserId?: number): Promise<FeedResponseDto> {
     const publishedList = await this.indexRepository.find({
       select: { id: true },
       where: { status: IndexStatus.PUBLISHED },
@@ -250,7 +246,6 @@ export class IndexesService implements OnModuleInit {
       const foundIdx = ids.indexOf(id);
       if (foundIdx !== -1) {
         if (next === true) {
-          // Если передан флаг ?next=true, переходим к следующему элементу (или закольцовываем)
           targetIndex = (foundIdx + 1) % ids.length;
         } else {
           targetIndex = foundIdx;
@@ -265,7 +260,7 @@ export class IndexesService implements OnModuleInit {
     });
 
     if (!entity) {
-      throw new NotFoundException();
+      throw new NotFoundException('Индекс не найден');
     }
 
     const prevId = targetIndex > 0 ? ids[targetIndex - 1] : ids[ids.length - 1];
@@ -282,11 +277,8 @@ export class IndexesService implements OnModuleInit {
 
   /**
    * 3. GET /api/indexes/draft — получение черновика текущего пользователя
-   * По ТЗ: не более 1 записи для пользователя, ID в параметрах не указывается.
    */
-  async getDraft(): Promise<IndexResponseDto> {
-    const currentUserId = getCurrentUserId(); // Использование функции-singleton
-
+  async getDraft(currentUserId: number): Promise<IndexResponseDto> {
     const draft = await this.indexRepository.findOne({
       where: {
         authorId: currentUserId,
@@ -296,7 +288,7 @@ export class IndexesService implements OnModuleInit {
     });
 
     if (!draft) {
-      throw new NotFoundException();
+      throw new NotFoundException('Черновик не найден');
     }
 
     return this.toDto(draft, currentUserId);
@@ -304,17 +296,14 @@ export class IndexesService implements OnModuleInit {
 
   /**
    * 4. POST /api/indexes — добавление/сохранение черновика + файлов картинки и видео
-   * Имена файлов генерируются на латинице и сохраняются в БД, файлы загружаются в MinIO.
-   * Системные поля вычисляются строго на бэкенде.
+   * Автор строго берется из сессии currentUserId!
    */
   async createOrUpdateDraft(
     dto: CreateDraftDto,
+    currentUserId: number,
     imageFile?: Express.Multer.File,
     videoFile?: Express.Multer.File,
   ): Promise<IndexResponseDto> {
-    const currentUserId = getCurrentUserId(); // Использование функции-singleton
-
-    // Ищем, есть ли уже черновик у этого пользователя (не более 1 черновика)
     let draft = await this.indexRepository.findOne({
       where: {
         authorId: currentUserId,
@@ -351,17 +340,15 @@ export class IndexesService implements OnModuleInit {
     }
 
     if (!draft) {
-      // Создаем новый черновик
       draft = this.indexRepository.create({
         ...dto,
-        status: IndexStatus.DRAFT, // Системное поле вычисляется на бэкенде
-        authorId: currentUserId,   // Системное поле из singleton
+        status: IndexStatus.DRAFT,
+        authorId: currentUserId, // Привязка автора строго из сессии
         imageUrl: imageFileName || 'default_index.jpg',
         videoUrl: videoFileName || 'default_video.mp4',
         likesCount: 0,
       });
     } else {
-      // Обновляем существующий черновик
       Object.assign(draft, dto);
       if (imageFileName) draft.imageUrl = imageFileName;
       if (videoFileName) draft.videoUrl = videoFileName;
@@ -377,31 +364,27 @@ export class IndexesService implements OnModuleInit {
 
   /**
    * 5. PUT /api/indexes/:id/publish — публикация услуги (смена статуса на published)
-   * Вернуть в черновик нельзя. Статус меняется только draft -> published.
-   * Системные поля (status, publishedAt) вычисляются на бэкенде.
+   * Проверяет права: авторство текущего пользователя. Чужая услуга -> 403 Forbidden!
    */
-  async publish(id: number, dto?: PublishIndexDto): Promise<IndexResponseDto> {
-    const currentUserId = getCurrentUserId(); // Использование функции-singleton
-
+  async publish(id: number, currentUserId: number, dto?: PublishIndexDto): Promise<IndexResponseDto> {
     const entity = await this.indexRepository.findOne({
       where: { id },
       relations: { author: true },
     });
 
     if (!entity || entity.status === IndexStatus.DELETED) {
-      throw new NotFoundException();
+      throw new NotFoundException('Услуга не найдена');
     }
 
     if (entity.authorId !== currentUserId) {
-      throw new ForbiddenException();
+      throw new ForbiddenException('Запрещено публиковать чужую услугу (доступ запрещен)');
     }
 
     if (entity.status === IndexStatus.PUBLISHED) {
-      throw new BadRequestException();
+      throw new BadRequestException('Услуга уже опубликована');
     }
 
     if (dto) {
-      // Исключаем undefined значения, чтобы не затирать существующие поля
       for (const [key, value] of Object.entries(dto)) {
         if (value !== undefined) {
           (entity as any)[key] = value;
@@ -409,7 +392,6 @@ export class IndexesService implements OnModuleInit {
       }
     }
 
-    // Системные поля вычисляются на бэкенде
     entity.status = IndexStatus.PUBLISHED;
     entity.publishedAt = new Date();
 
@@ -423,43 +405,35 @@ export class IndexesService implements OnModuleInit {
 
   /**
    * 6. DELETE /api/indexes/:id — мягкое удаление услуги
-   * По ТЗ: только soft delete (status = 'deleted'), записи клиенту больше не отдаются.
    */
-  async softDelete(id: number): Promise<void> {
-    const currentUserId = getCurrentUserId(); // Использование функции-singleton
-
+  async softDelete(id: number, currentUserId: number): Promise<void> {
     const entity = await this.indexRepository.findOne({
       where: { id },
     });
 
     if (!entity || entity.status === IndexStatus.DELETED) {
-      throw new NotFoundException();
+      throw new NotFoundException('Услуга не найдена');
     }
 
-    // Проверка авторства: удалять разрешено только услуги текущего пользователя
     if (entity.authorId !== currentUserId) {
-      throw new ForbiddenException('Удаление чужих услуг запрещено');
+      throw new ForbiddenException('Запрещено удалять чужую услугу');
     }
 
-    // Мягкое удаление через ORM
     entity.status = IndexStatus.DELETED;
     await this.indexRepository.save(entity);
   }
 
   /**
    * 7. POST /api/indexes/:id/like — постановка или отмена лайка
-   * Поле value: 1 — ставит лайк, 0 — отменяет лайк.
    */
-  async toggleLike(id: number, value: number): Promise<IndexResponseDto> {
-    const currentUserId = getCurrentUserId(); // Использование функции-singleton
-
+  async toggleLike(id: number, currentUserId: number, value: number): Promise<IndexResponseDto> {
     const entity = await this.indexRepository.findOne({
       where: { id },
       relations: { author: true },
     });
 
     if (!entity || entity.status === IndexStatus.DELETED) {
-      throw new NotFoundException();
+      throw new NotFoundException('Услуга не найдена');
     }
 
     const existingLike = await this.likeRepository.findOne({
@@ -467,7 +441,6 @@ export class IndexesService implements OnModuleInit {
     });
 
     if (value === 1) {
-      // Поставить лайк
       if (!existingLike) {
         const newLike = this.likeRepository.create({
           indexId: id,
@@ -479,7 +452,6 @@ export class IndexesService implements OnModuleInit {
         await this.indexRepository.save(entity);
       }
     } else if (value === 0) {
-      // Отменить лайк
       if (existingLike) {
         await this.likeRepository.remove(existingLike);
 
@@ -492,18 +464,16 @@ export class IndexesService implements OnModuleInit {
   }
 
   /**
-   * Получение услуги по ID (для детального просмотра опубликованной услуги)
+   * Получение услуги по ID
    */
-  async findOne(id: number): Promise<IndexResponseDto> {
-    const currentUserId = getCurrentUserId();
-
+  async findOne(id: number, currentUserId?: number): Promise<IndexResponseDto> {
     const entity = await this.indexRepository.findOne({
       where: { id, status: IndexStatus.PUBLISHED },
       relations: { author: true },
     });
 
     if (!entity) {
-      throw new NotFoundException();
+      throw new NotFoundException('Услуга не найдена');
     }
 
     return this.toDto(entity, currentUserId);
