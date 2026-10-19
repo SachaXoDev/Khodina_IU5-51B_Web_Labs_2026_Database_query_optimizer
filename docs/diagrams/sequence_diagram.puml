@@ -53,13 +53,13 @@ deactivate Indexes
 == 6. Получение ленты без ID (первая карточка) ==
 Creator -> Indexes : 13: GET /api/indexes/feed()
 activate Indexes
-Indexes --> Creator : 14: 200 OK JSON Первая карточка ленты\n{ current: { id: 1, isOwner: 1 }, prevId: 7, nextId: 2 }
+Indexes --> Creator : 14: 200 OK JSON Первая карточка ленты\n{ current: { id: 1, isOwner: 1 } }
 deactivate Indexes
 
 == 7. Получение следующей карточки ленты по ID ==
 Creator -> Indexes : 15: GET /api/indexes/feed?id=1&next=true()
 activate Indexes
-Indexes --> Creator : 16: 200 OK JSON Следующая карточка ленты\n{ current: { id: 2, isOwner: 0 }, prevId: 1, nextId: 3 }
+Indexes --> Creator : 16: 200 OK JSON Следующая карточка ленты\n{ current: { id: 2, isOwner: 0 } }
 deactivate Indexes
 
 == 8. Постановка отметки «Нравится» (лайк) ==
