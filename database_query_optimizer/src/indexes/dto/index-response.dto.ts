@@ -74,10 +74,4 @@ export class IndexResponseDto {
 export class FeedResponseDto {
   @ApiPropertyOptional({ type: () => IndexResponseDto, description: 'Текущий индекс в ленте' })
   current: IndexResponseDto | null;
-
-  @ApiPropertyOptional({ example: 5, description: 'ID предыдущего индекса для циклической навигации' })
-  prevId: number | null;
-
-  @ApiPropertyOptional({ example: 2, description: 'ID следующего индекса для циклической навигации' })
-  nextId: number | null;
 }
