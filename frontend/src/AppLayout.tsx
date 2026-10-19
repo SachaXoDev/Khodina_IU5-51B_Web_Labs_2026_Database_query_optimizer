@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { IndexItem, MOCK_INDEXES } from './modules/mock';
 import { TabBar } from './components/TabBar';
-import './MobileApp.css';
+import { StatusBar } from './components/StatusBar';
+import './style.css';
 
 export interface AppOutletContext {
   cards: IndexItem[];
@@ -15,22 +16,15 @@ export const AppLayout: React.FC = () => {
   const [cards, setCards] = useState<IndexItem[]>(MOCK_INDEXES);
 
   return (
-    <div className="appShell">
-      <header className="appHeader d-flex justify-content-between align-items-center">
-        <span className="fw-bold" style={{ fontSize: '0.95rem' }}>
-          ⚙️ Database Query Optimizer
-        </span>
-        <span className="badge bg-secondary" style={{ fontSize: '0.7rem' }}>
-          Гость
-        </span>
-      </header>
+    <div className="phone-screen">
+      {/* iOS статус-бар (как в ЛР-1/ЛР-2) */}
+      <StatusBar />
 
-      <main className="appContent">
-        <Outlet context={{ cards, setCards }} />
-      </main>
+      {/* Прокручиваемый контент страницы */}
+      <Outlet context={{ cards, setCards }} />
 
-      {/* Нижняя таб-панель из 4 пунктов */}
-      <TabBar cards={cards} />
+      {/* Фирменная нижняя таб-панель из 4 пунктов */}
+      <TabBar />
     </div>
   );
 };

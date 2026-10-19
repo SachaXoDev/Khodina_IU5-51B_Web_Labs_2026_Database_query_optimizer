@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card, Badge } from 'react-bootstrap';
 import { IndexItem } from '../modules/mock';
 
 interface IndexCardProps {
@@ -10,58 +9,56 @@ interface IndexCardProps {
 const defaultImage = '/DefaultImage.jpg';
 
 export const IndexCard: React.FC<IndexCardProps> = ({ item, onClick }) => {
+  const isLiked = item.isLiked === 1;
+
   return (
-    <Card
-      className="shadow-sm border-0 mb-3 overflow-hidden"
-      style={{ cursor: 'pointer', transition: 'transform 0.15s ease-in-out' }}
-      onClick={onClick}
-    >
-      <div style={{ height: '170px', overflow: 'hidden', position: 'relative', background: '#0f172a' }}>
-        <Card.Img
-          variant="top"
+    <div className="tile-card" onClick={onClick}>
+      {/* Изображение услуги или дефолтная заглушка */}
+      <div className="tile-image-wrapper">
+        <img
           src={item.imageUrl || defaultImage}
           alt={item.indexName}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          className="tile-image"
           onError={(e) => {
             (e.target as HTMLImageElement).src = defaultImage;
           }}
         />
-        <Badge
-          bg="primary"
-          className="position-absolute top-0 end-0 m-2 px-2 py-1 shadow-sm"
-          style={{ fontSize: '0.8rem' }}
-        >
-          {item.indexType}
-        </Badge>
+
+        {/* Бейдж дефолтного изображения для проверки преподавателем */}
         {!item.imageUrl && (
-          <Badge
-            bg="dark"
-            className="position-absolute bottom-0 start-0 m-2 px-2 py-1 shadow-sm opacity-75"
-            style={{ fontSize: '0.7rem' }}
-          >
-            Изображение по умолчанию
-          </Badge>
+          <span className="default-badge">default image</span>
         )}
+
+        {/* Лайки карточки (зеленое сердце если лайкнуто, как в ЛР-1/ЛР-2) */}
+        <div className={`tile-likes-badge ${isLiked ? 'liked' : 'unliked'}`}>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill={isLiked ? '#1ee46a' : 'none'}
+            stroke={isLiked ? '#1ee46a' : 'rgba(255,255,255,0.8)'}
+            strokeWidth="2"
+          >
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+          <span>{item.likesCount}</span>
+        </div>
       </div>
 
-      <Card.Body className="p-3">
-        <Card.Title className="fs-6 fw-bold text-primary mb-1 text-truncate">
+      {/* Информационный блок плитки */}
+      <div className="tile-info">
+        <h3 className="tile-title" title={item.indexName}>
           {item.indexName}
-        </Card.Title>
-        <Card.Subtitle className="mb-2 text-muted" style={{ fontSize: '0.75rem' }}>
-          Таблица: <code>{item.tableName}</code> | Колонка: <code>{item.columnName}</code>
-        </Card.Subtitle>
-
-        <Card.Text className="text-secondary small mb-2" style={{ maxHeight: '38px', overflow: 'hidden' }}>
-          {item.shortDescription}
-        </Card.Text>
-
-        <div className="d-flex justify-content-between align-items-center pt-2 border-top small text-muted">
-          <span>Строк: <strong>{Number(item.cardinality).toLocaleString()}</strong></span>
-          <span>❤️ {item.likesCount}</span>
-        </div>
-      </Card.Body>
-    </Card>
+        </h3>
+        <span className="tile-subtitle">
+          {item.tableName}.{item.columnName}
+        </span>
+        <span className="tile-time">
+          Cardinality: {Number(item.cardinality).toLocaleString()}
+        </span>
+      </div>
+    </div>
   );
 };
 

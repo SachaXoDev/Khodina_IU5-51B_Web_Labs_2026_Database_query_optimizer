@@ -1,0 +1,650 @@
+/* ==========================================================================
+   Aiven-Style SQL Query Optimizer Theme (Black, White & Green)
+   Точное соответствие визуалу ЛР-1 и ЛР-2 (Figma / iPhone Phone Screen)
+   ========================================================================== */
+
+:root {
+  --color-bg-base: #0d0e10;
+  --color-bg-card: #17181c;
+  --color-bg-card-secondary: #222328;
+  --color-bg-input: #0a0a0a;
+
+  /* Фирменный зеленый Aiven Primary Green */
+  --color-accent-green: #1fdc6f;
+  --color-accent-green-hover: #5ffa74;
+  --color-accent-green-deep: #0ab060;
+  --color-accent-green-glow: rgba(31, 220, 111, 0.35);
+
+  --color-text-main: #ffffff;
+  --color-text-muted: #d6d6d6;
+  --color-text-dim: #919294;
+  --color-border: #2d2e30;
+  --color-border-light: #444547;
+  --color-border-accent: rgba(31, 220, 111, 0.45);
+  --color-teal: #1fdc6f;
+  --color-cyan: #2ed0cd;
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+html, body {
+  background-color: #050608;
+  color: var(--color-text-main);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  width: 100vw;
+  overflow-x: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#root {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ==========================================================================
+   Фиксированный вертикальный мобильный экран (390 x 844) из ЛР-1 / ЛР-2
+   ========================================================================== */
+.phone-screen {
+  width: 390px;
+  height: 844px;
+  min-width: 390px;
+  max-width: 390px;
+  min-height: 844px;
+  max-height: 844px;
+  background-color: var(--color-bg-base);
+  border-radius: 44px;
+  border: 10px solid #22242a;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* iOS Status Bar */
+.ios-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px 8px;
+  background: transparent;
+  color: #ffffff;
+  z-index: 20;
+}
+
+.ios-status-time {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+.ios-status-icons {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* Шапка экрана */
+.mobile-header {
+  height: 48px;
+  min-height: 48px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: transparent;
+  border-bottom: none;
+  z-index: 10;
+}
+
+.header-logo-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo-text {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+}
+
+.header-pipe {
+  font-size: 16px;
+  font-weight: 300;
+  color: #555861;
+}
+
+.service-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #f4f4f5;
+}
+
+.guest-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a1a1aa;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Прокручиваемый контент обычных страниц */
+.page-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 74px; /* отступ под нижнюю таб-панель */
+}
+
+.content-padding {
+  padding: 8px 16px 20px;
+}
+
+/* ==========================================================================
+   Поиск и фильтрация (как в ЛР-1/ЛР-2)
+   ========================================================================== */
+.search-form-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.search-input-box {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-field {
+  width: 100%;
+  height: 42px;
+  background-color: #0d0e11;
+  border: 1px solid #23262d;
+  color: #f0f6fc;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.search-input-field:focus {
+  border-color: #1fdc6f;
+  box-shadow: 0 0 0 2px rgba(31, 220, 111, 0.2);
+}
+
+.search-input-field::placeholder {
+  color: #6e7681;
+}
+
+.filter-select {
+  height: 42px;
+  background-color: #0d0e11;
+  border: 1px solid #23262d;
+  color: #f0f6fc;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  border-color: #1fdc6f;
+}
+
+.btn-search-action {
+  background-color: #1fdc6f;
+  border: none;
+  color: #0b0c0e;
+  padding: 0 16px;
+  height: 42px;
+  border-radius: 10px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.btn-search-action:hover {
+  opacity: 0.9;
+}
+
+.btn-reset-action {
+  background-color: transparent;
+  border: 1px solid #33363f;
+  color: #9ca3af;
+  padding: 0 10px;
+  height: 42px;
+  border-radius: 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   Плитка в 2 столбца (Pixel Perfect ЛР-1/ЛР-2)
+   ========================================================================== */
+.index-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.tile-card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tile-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-accent-green);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.tile-image-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background-color: #000;
+  overflow: hidden;
+}
+
+.tile-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.default-badge {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #1fdc6f;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(31, 220, 111, 0.4);
+  letter-spacing: -0.2px;
+}
+
+.tile-likes-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  border-radius: 20px;
+  padding: 3px 9px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  color: #c9d1d9;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tile-likes-badge.liked {
+  color: #1ee46a;
+  border: 1.5px solid #1ee46a;
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.tile-info {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tile-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.tile-subtitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #1ee46a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tile-time {
+  font-size: 11px;
+  color: #8c93a0;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   VIBES FEED: Полноэкранный TikTok / Reels интерфейс из ЛР-1
+   ========================================================================== */
+.vibes-feed-container {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  height: calc(844px - 64px - 40px);
+  overflow: hidden;
+  background-color: #000;
+}
+
+.vibes-media-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.vibes-video-bg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.vibes-gradient-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    rgba(13, 14, 16, 0.75) 0%,
+    rgba(13, 14, 16, 0.05) 25%,
+    rgba(13, 14, 16, 0.15) 50%,
+    rgba(13, 14, 16, 0.85) 80%,
+    rgba(13, 14, 16, 0.98) 100%
+  );
+  pointer-events: none;
+}
+
+.vibes-top-bar {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 5;
+}
+
+.vibes-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(13, 14, 16, 0.7);
+  backdrop-filter: blur(10px);
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vibes-counter {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-text-muted);
+  background: rgba(13, 14, 16, 0.7);
+  backdrop-filter: blur(10px);
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Боковая панель действий Vibes (справа) */
+.vibes-sidebar-actions {
+  position: absolute;
+  right: 14px;
+  top: 48%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  z-index: 5;
+}
+
+.vibes-action-btn {
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  text-decoration: none;
+  color: #fff;
+}
+
+.action-icon-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(30, 32, 38, 0.88);
+  backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  transition: transform 0.15s ease;
+}
+
+.action-icon-circle:active {
+  transform: scale(0.92);
+}
+
+.action-icon-circle.next-circle {
+  background: #232730;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.action-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: #c9d1d9;
+}
+
+/* Нижний оверлей Vibes */
+.vibes-bottom-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 16px 14px 10px 14px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 82%;
+}
+
+.vibes-tags-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vibes-type-pill {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  background: rgba(22, 24, 29, 0.82);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.vibes-table-pill {
+  font-size: 13px;
+  font-weight: 600;
+  color: #10b981;
+  background: rgba(22, 24, 29, 0.82);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid #10b981;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.vibes-title {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
+.vibes-desc-text {
+  font-size: 13px;
+  color: #e2e8f0;
+  line-height: 1.4;
+}
+
+.vibes-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(110px, auto));
+  gap: 8px;
+  width: fit-content;
+}
+
+.vibes-metric-card {
+  background: rgba(18, 20, 26, 0.75);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  padding: 6px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metric-card-label {
+  font-size: 9px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+}
+
+.metric-card-val {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Нижняя панель навигации из 4 пунктов (как в ЛР-1/ЛР-2 + 4 пункта по ТЗ)
+   ========================================================================== */
+.mobile-tabbar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  min-height: 64px;
+  background-color: rgba(13, 14, 16, 0.96);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 6px;
+  z-index: 20;
+}
+
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--color-text-dim);
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.tab-item.active {
+  color: #1fdc6f;
+}
+
+.tab-item.disabled {
+  color: #4b5260 !important;
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.tab-label {
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

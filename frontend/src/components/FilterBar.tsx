@@ -1,13 +1,10 @@
 import React from 'react';
-import { Form, Button, Row, Col } from 'react-bootstrap';
 
 interface FilterBarProps {
   search: string;
   setSearch: (value: string) => void;
   indexType: string;
   setIndexType: (value: string) => void;
-  minCardinality: string;
-  setMinCardinality: (value: string) => void;
   onSubmit: () => void;
   onReset: () => void;
   loading?: boolean;
@@ -18,8 +15,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   setSearch,
   indexType,
   setIndexType,
-  minCardinality,
-  setMinCardinality,
   onSubmit,
   onReset,
   loading = false,
@@ -30,52 +25,43 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   };
 
   return (
-    <Form onSubmit={handleSubmit} className="bg-light p-3 rounded-3 shadow-sm mb-3 border">
-      <div className="mb-2">
-        <Form.Control
-          size="sm"
+    <form onSubmit={handleSubmit} className="search-form-row">
+      {/* Поле поиска по названию/описанию/кардинальности */}
+      <div className="search-input-box">
+        <input
           type="text"
-          placeholder="Поиск по названию или описанию..."
+          className="search-input-field"
+          placeholder="Поиск по названию / таблице..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
-      <Row className="g-2 mb-2">
-        <Col xs={6}>
-          <Form.Select
-            size="sm"
-            value={indexType}
-            onChange={(e) => setIndexType(e.target.value)}
-          >
-            <option value="">Все типы</option>
-            <option value="B-Tree">B-Tree</option>
-            <option value="BRIN">BRIN</option>
-            <option value="Hash">Hash</option>
-            <option value="GIN">GIN</option>
-          </Form.Select>
-        </Col>
+      {/* Селект выбора типа индекса */}
+      <select
+        className="filter-select"
+        value={indexType}
+        onChange={(e) => setIndexType(e.target.value)}
+      >
+        <option value="">Все типы</option>
+        <option value="B-Tree">B-Tree</option>
+        <option value="BRIN">BRIN</option>
+        <option value="Hash">Hash</option>
+        <option value="GIN">GIN</option>
+      </select>
 
-        <Col xs={6}>
-          <Form.Control
-            size="sm"
-            type="number"
-            placeholder="Мин. строк"
-            value={minCardinality}
-            onChange={(e) => setMinCardinality(e.target.value)}
-          />
-        </Col>
-      </Row>
+      {/* Кнопка "Найти" в стиле Aiven Green */}
+      <button type="submit" className="btn-search-action" disabled={loading}>
+        {loading ? '...' : 'Найти'}
+      </button>
 
-      <div className="d-flex gap-2">
-        <Button variant="primary" size="sm" type="submit" className="flex-grow-1" disabled={loading}>
-          {loading ? 'Поиск...' : '🔍 Применить'}
-        </Button>
-        <Button variant="outline-secondary" size="sm" type="button" onClick={onReset} disabled={loading}>
-          Сброс
-        </Button>
-      </div>
-    </Form>
+      {/* Кнопка сброса */}
+      {(search || indexType) && (
+        <button type="button" className="btn-reset-action" onClick={onReset}>
+          ✕
+        </button>
+      )}
+    </form>
   );
 };
 

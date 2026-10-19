@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import { Spinner, Alert, Badge } from 'react-bootstrap';
 import { IndexCard } from '../components/IndexCard';
 import { FilterBar } from '../components/FilterBar';
 import { fetchIndexes } from '../modules/indexesApi';
@@ -14,15 +13,13 @@ export const ListPage: React.FC = () => {
   // Локальные состояния фильтров
   const [search, setSearch] = useState('');
   const [indexType, setIndexType] = useState('');
-  const [minCardinality, setMinCardinality] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const loadData = async (filterParams = { search, indexType, minCardinality }) => {
+  const loadData = async (filterParams = { search, indexType }) => {
     setLoading(true);
     const data = await fetchIndexes({
       search: filterParams.search,
       indexType: filterParams.indexType,
-      minCardinality: filterParams.minCardinality ? Number(filterParams.minCardinality) : undefined,
     });
     setCards(data);
     setLoading(false);
@@ -33,14 +30,13 @@ export const ListPage: React.FC = () => {
   }, []);
 
   const handleFilterSubmit = () => {
-    loadData({ search, indexType, minCardinality });
+    loadData({ search, indexType });
   };
 
   const handleFilterReset = () => {
     setSearch('');
     setIndexType('');
-    setMinCardinality('');
-    loadData({ search: '', indexType: '', minCardinality: '' });
+    loadData({ search: '', indexType: '' });
   };
 
   const handleCardClick = (id: number) => {
@@ -48,46 +44,57 @@ export const ListPage: React.FC = () => {
   };
 
   return (
-    <div className="p-3">
-      <div className="d-flex justify-content-between align-items-center mb-2">
-        <h5 className="fw-bold mb-0">Каталог услуг (Плитка)</h5>
-        <Badge bg="secondary">Найдено: {cards.length}</Badge>
-      </div>
-      <p className="text-muted small mb-3">Оптимизация запросов СУБД PostgreSQL</p>
-
-      {/* Панель фильтрации */}
-      <FilterBar
-        search={search}
-        setSearch={setSearch}
-        indexType={indexType}
-        setIndexType={setIndexType}
-        minCardinality={minCardinality}
-        setMinCardinality={setMinCardinality}
-        onSubmit={handleFilterSubmit}
-        onReset={handleFilterReset}
-        loading={loading}
-      />
-
-      {loading && (
-        <div className="text-center py-4">
-          <Spinner animation="border" variant="primary" />
+    <>
+      {/* Шапка экрана каталога (как в ЛР-1/ЛР-2) */}
+      <header className="mobile-header">
+        <div className="header-logo-group">
+          <span className="brand-logo-text">DB OPTIMIZER</span>
+          <span className="header-pipe">|</span>
+          <span className="service-name">B-tree Catalog</span>
         </div>
-      )}
+        <span className="guest-badge">Гость</span>
+      </header>
 
-      {!loading && cards.length === 0 && (
-        <Alert variant="info" className="text-center">
-          По заданным критериям ничего не найдено. Попробуйте сбросить фильтры.
-        </Alert>
-      )}
+      {/* Основной скроллируемый контент */}
+      <main className="page-scrollable">
+        <div className="content-padding">
+          {/* Поиск и фильтрация */}
+          <FilterBar
+            search={search}
+            setSearch={setSearch}
+            indexType={indexType}
+            setIndexType={setIndexType}
+            onSubmit={handleFilterSubmit}
+            onReset={handleFilterReset}
+            loading={loading}
+          />
 
-      {!loading && (
-        <div>
-          {cards.map((item) => (
-            <IndexCard key={item.id} item={item} onClick={() => handleCardClick(item.id)} />
-          ))}
+          {/* Плитка в 2 столбца (Pixel Perfect ЛР-1 / ЛР-2) */}
+          <div className="index-grid-2col">
+            {cards.map((item) => (
+              <IndexCard
+                key={item.id}
+                item={item}
+                onClick={() => handleCardClick(item.id)}
+              />
+            ))}
+          </div>
+
+          {!loading && cards.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '30px 10px', color: '#8c93a0', gridColumn: 'span 2' }}>
+              <p>Индексы по запросу не найдены.</p>
+              <button
+                type="button"
+                style={{ background: 'none', border: 'none', color: '#1fdc6f', textDecoration: 'underline', cursor: 'pointer' }}
+                onClick={handleFilterReset}
+              >
+                Сбросить фильтр
+              </button>
+            </div>
+          )}
         </div>
-      )}
-    </div>
+      </main>
+    </>
   );
 };
 
