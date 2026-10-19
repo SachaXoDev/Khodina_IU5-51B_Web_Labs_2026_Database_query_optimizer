@@ -23,7 +23,6 @@ export const FeedPage: React.FC = () => {
   };
 
   const handleLike = () => {
-    // Демонстрация интерактивности лайка на клиенте
     if (currentItem) {
       currentItem.isLiked = currentItem.isLiked === 1 ? 0 : 1;
       currentItem.likesCount += currentItem.isLiked === 1 ? 1 : -1;
@@ -43,7 +42,7 @@ export const FeedPage: React.FC = () => {
 
   return (
     <div className="vibes-feed-container">
-      {/* Медиа-слой (видео или картинка с градиентным затемнением) */}
+      {/* Медиа-слой (видео или обложка) */}
       <div className="vibes-media-layer">
         {currentItem.videoUrl ? (
           <video
@@ -78,7 +77,7 @@ export const FeedPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Боковая панель действий Vibes (справа) */}
+      {/* Боковая панель действий Vibes (справа) - 1-в-1 из ЛР-2 */}
       <div className="vibes-sidebar-actions">
         {/* Кнопка лайка */}
         <button className="vibes-action-btn" onClick={handleLike} title="Лайк">
@@ -122,7 +121,7 @@ export const FeedPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Нижний информационный оверлей Vibes (поверх видео) */}
+      {/* Нижний информационный оверлей Vibes (поверх видео) - 1-в-1 из ЛР-2 */}
       <div className="vibes-bottom-overlay">
         {/* Теги типа индекса и таблицы */}
         <div className="vibes-tags-row">
@@ -152,7 +151,7 @@ export const FeedPage: React.FC = () => {
           </span>
         </div>
 
-        {/* Метрики производительности (ВРЕМЯ, CARDINALITY, КОЛ-ВО СТРОК) */}
+        {/* Метрики производительности (ВРЕМЯ СОЗДАНИЯ, CARDINALITY) */}
         <div className="vibes-metrics-grid">
           <div className="vibes-metric-card">
             <span className="metric-card-label">ВРЕМЯ СОЗДАНИЯ</span>
@@ -160,7 +159,7 @@ export const FeedPage: React.FC = () => {
           </div>
           <div className="vibes-metric-card">
             <span className="metric-card-label">CARDINALITY</span>
-            <span className="metric-card-val">{currentItem.cardinality}</span>
+            <span className="metric-card-val">{Number(currentItem.cardinality).toLocaleString()}</span>
           </div>
         </div>
       </div>

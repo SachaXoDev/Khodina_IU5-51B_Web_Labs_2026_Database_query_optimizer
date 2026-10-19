@@ -1,6 +1,6 @@
 /* ==========================================================================
    Aiven-Style SQL Query Optimizer Theme (Black, White & Green)
-   Точное соответствие визуалу ЛР-1 и ЛР-2 (Figma / iPhone Phone Screen)
+   ТОЧНАЯ КОПИЯ ЛР-2 (database_query_optimizer/public/style.css)
    ========================================================================== */
 
 :root {
@@ -55,7 +55,7 @@ html, body {
 }
 
 /* ==========================================================================
-   Фиксированный вертикальный мобильный экран (390 x 844) из ЛР-1 / ЛР-2
+   Фиксированный вертикальный мобильный экран (390 x 844) из ЛР-2
    ========================================================================== */
 .phone-screen {
   width: 390px;
@@ -98,14 +98,14 @@ html, body {
   gap: 7px;
 }
 
-/* Шапка экрана */
+/* Шапка экрана ЛР-2 */
 .mobile-header {
   height: 48px;
   min-height: 48px;
   padding: 0 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   background-color: transparent;
   border-bottom: none;
   z-index: 10;
@@ -137,17 +137,7 @@ html, body {
   color: #f4f4f5;
 }
 
-.guest-badge {
-  font-size: 11px;
-  font-weight: 600;
-  color: #a1a1aa;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 3px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-/* Прокручиваемый контент обычных страниц */
+/* Прокручиваемый контент каталога */
 .page-scrollable {
   flex: 1;
   overflow-y: auto;
@@ -162,13 +152,20 @@ html, body {
 }
 
 /* ==========================================================================
-   Поиск и фильтрация (как в ЛР-1/ЛР-2)
+   Фильтрация по Cardinality со слайдером (1-в-1 из ЛР-2)
    ========================================================================== */
+.filter-cardinality-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
 .search-form-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 12px;
   width: 100%;
 }
 
@@ -181,16 +178,23 @@ html, body {
 
 .search-input-field {
   width: 100%;
-  height: 42px;
+  height: 46px;
   background-color: #0d0e11;
   border: 1px solid #23262d;
   color: #f0f6fc;
-  padding: 0 14px;
-  border-radius: 10px;
+  padding: 0 16px;
+  border-radius: 12px;
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 14px;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
+  -moz-appearance: textfield;
+}
+
+.search-input-field::-webkit-outer-spin-button,
+.search-input-field::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .search-input-field:focus {
@@ -202,31 +206,15 @@ html, body {
   color: #6e7681;
 }
 
-.filter-select {
-  height: 42px;
-  background-color: #0d0e11;
-  border: 1px solid #23262d;
-  color: #f0f6fc;
-  padding: 0 10px;
-  border-radius: 10px;
-  font-size: 12px;
-  outline: none;
-  cursor: pointer;
-}
-
-.filter-select:focus {
-  border-color: #1fdc6f;
-}
-
 .btn-search-action {
   background-color: #1fdc6f;
   border: none;
   color: #0b0c0e;
-  padding: 0 16px;
-  height: 42px;
-  border-radius: 10px;
+  padding: 0 20px;
+  height: 46px;
+  border-radius: 12px;
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   display: inline-flex;
@@ -240,24 +228,64 @@ html, body {
   opacity: 0.9;
 }
 
-.btn-reset-action {
-  background-color: transparent;
-  border: 1px solid #33363f;
-  color: #9ca3af;
-  padding: 0 10px;
-  height: 42px;
-  border-radius: 10px;
-  font-size: 12px;
+.slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.cardinality-range-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 4px;
+  background: #232730;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
   cursor: pointer;
 }
 
+.cardinality-range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #1fdc6f;
+  border: 2px solid #0d0e11;
+  box-shadow: 0 0 6px rgba(31, 220, 111, 0.5);
+  cursor: pointer;
+}
+
+.slider-scale-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 600;
+  color: #6e7681;
+  padding: 0 2px;
+}
+
 /* ==========================================================================
-   Плитка в 2 столбца (Pixel Perfect ЛР-1/ЛР-2)
+   Плитка в 2 столбца (1-в-1 из ЛР-2)
    ========================================================================== */
 .index-grid-2col {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+}
+
+.tile-card-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tile-card-wrapper .tile-card {
+  height: 100%;
+  flex: 1;
 }
 
 .tile-card {
@@ -291,6 +319,40 @@ html, body {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+/* Кнопка логического удаления из ЛР-2 */
+.tile-delete-btn {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(18, 20, 26, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.85);
+  transition: all 0.15s ease;
+  z-index: 5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  padding: 0;
+}
+
+.tile-delete-btn:hover {
+  background: rgba(30, 34, 42, 0.95);
+  color: #1fdc6f;
+  border-color: #1fdc6f;
+  transform: scale(1.08);
+}
+
+.tile-delete-btn:active {
+  transform: scale(0.94);
 }
 
 .default-badge {
@@ -368,7 +430,7 @@ html, body {
 }
 
 /* ==========================================================================
-   VIBES FEED: Полноэкранный TikTok / Reels интерфейс из ЛР-1
+   VIBES FEED: Полноэкранный TikTok / Reels интерфейс из ЛР-2
    ========================================================================== */
 .vibes-feed-container {
   position: relative;
@@ -551,6 +613,14 @@ html, body {
   line-height: 1.2;
 }
 
+.desc-toggle-btn {
+  color: #1fdc6f;
+  cursor: pointer;
+  font-weight: 600;
+  margin-left: 6px;
+  font-size: 12px;
+}
+
 .vibes-desc-text {
   font-size: 13px;
   color: #e2e8f0;
@@ -590,7 +660,7 @@ html, body {
 }
 
 /* ==========================================================================
-   Нижняя панель навигации из 4 пунктов (как в ЛР-1/ЛР-2 + 4 пункта по ТЗ)
+   Нижняя панель навигации (mobile-tabbar) из ЛР-2 (+ 4 пункта по ТЗ)
    ========================================================================== */
 .mobile-tabbar {
   position: absolute;

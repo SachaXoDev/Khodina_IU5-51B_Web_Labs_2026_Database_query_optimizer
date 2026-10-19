@@ -1,66 +1,73 @@
 import React from 'react';
 
 interface FilterBarProps {
-  search: string;
-  setSearch: (value: string) => void;
-  indexType: string;
-  setIndexType: (value: string) => void;
+  cardinality: string;
+  setCardinality: (val: string) => void;
   onSubmit: () => void;
-  onReset: () => void;
-  loading?: boolean;
 }
 
 export const FilterBar: React.FC<FilterBarProps> = ({
-  search,
-  setSearch,
-  indexType,
-  setIndexType,
+  cardinality,
+  setCardinality,
   onSubmit,
-  onReset,
-  loading = false,
 }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit();
   };
 
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCardinality(e.target.value);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCardinality(e.target.value);
+  };
+
+  const numValue = cardinality === '' ? 0 : Math.min(5000000, Math.max(0, parseInt(cardinality, 10) || 0));
+
   return (
-    <form onSubmit={handleSubmit} className="search-form-row">
-      {/* Поле поиска по названию/описанию/кардинальности */}
-      <div className="search-input-box">
-        <input
-          type="text"
-          className="search-input-field"
-          placeholder="Поиск по названию / таблице..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+    <form onSubmit={handleSubmit} className="filter-cardinality-box">
+      {/* Поле ввода Cardinality и кнопка Найти */}
+      <div className="search-form-row">
+        <div className="search-input-box">
+          <input
+            type="number"
+            id="num-query"
+            min="0"
+            max="10000000"
+            step="50000"
+            placeholder="Поиск по cardinality..."
+            className="search-input-field"
+            value={cardinality}
+            onChange={handleInputChange}
+          />
+        </div>
+
+        <button type="submit" className="btn-search-action">
+          Найти
+        </button>
       </div>
 
-      {/* Селект выбора типа индекса */}
-      <select
-        className="filter-select"
-        value={indexType}
-        onChange={(e) => setIndexType(e.target.value)}
-      >
-        <option value="">Все типы</option>
-        <option value="B-Tree">B-Tree</option>
-        <option value="BRIN">BRIN</option>
-        <option value="Hash">Hash</option>
-        <option value="GIN">GIN</option>
-      </select>
-
-      {/* Кнопка "Найти" в стиле Aiven Green */}
-      <button type="submit" className="btn-search-action" disabled={loading}>
-        {loading ? '...' : 'Найти'}
-      </button>
-
-      {/* Кнопка сброса */}
-      {(search || indexType) && (
-        <button type="button" className="btn-reset-action" onClick={onReset}>
-          ✕
-        </button>
-      )}
+      {/* Числовой слайдер (ползунок) диапазона Cardinality (как в ЛР-2) */}
+      <div className="slider-row">
+        <input
+          type="range"
+          id="slider-query"
+          min="0"
+          max="5000000"
+          step="50000"
+          value={numValue}
+          className="cardinality-range-slider"
+          onChange={handleSliderChange}
+        />
+        <div className="slider-scale-labels">
+          <span>0</span>
+          <span>1.5M</span>
+          <span>3M</span>
+          <span>5M+</span>
+        </div>
+      </div>
     </form>
   );
 };
