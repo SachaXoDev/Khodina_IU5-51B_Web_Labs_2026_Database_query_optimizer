@@ -23,6 +23,4 @@ export class IndexResponseDto {
 
 export class FeedResponseDto {
   current: IndexResponseDto | null;
-  prevId: number | null;
-  nextId: number | null;
 }

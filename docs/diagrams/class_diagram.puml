@@ -20,10 +20,7 @@ package "Frontend SPA (4 страницы)" #E8F4F8 {
 
   class FeedPage <<Page>> {
     + currentItem: IndexResponseDto
-    + prevId: number | null
-    + nextId: number | null
     + onNextClick(): void
-    + onPrevClick(): void
     + onLikeToggle(): void
     + renderFeed(): void
   }
@@ -150,8 +147,6 @@ package "Backend: DTO & Data Transfer Objects" #E1F5FE {
 
   class FeedResponseDto {
     + current: IndexResponseDto
-    + prevId: number | null
-    + nextId: number | null
   }
 
   class CreateDraftDto {

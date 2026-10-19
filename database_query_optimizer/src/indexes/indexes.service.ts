@@ -238,8 +238,6 @@ export class IndexesService implements OnModuleInit {
     if (publishedList.length === 0) {
       return {
         current: null,
-        prevId: null,
-        nextId: null,
       };
     }
 
@@ -268,15 +266,10 @@ export class IndexesService implements OnModuleInit {
       throw new NotFoundException();
     }
 
-    const prevId = targetIndex > 0 ? ids[targetIndex - 1] : ids[ids.length - 1];
-    const nextId = targetIndex < ids.length - 1 ? ids[targetIndex + 1] : ids[0];
-
     const currentDto = await this.toDto(entity, currentUserId);
 
     return {
       current: currentDto,
-      prevId: prevId,
-      nextId: nextId,
     };
   }
 
