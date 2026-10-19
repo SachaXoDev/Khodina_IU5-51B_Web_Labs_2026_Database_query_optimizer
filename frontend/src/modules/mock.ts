@@ -31,8 +31,9 @@ export const MOCK_INDEXES: IndexItem[] = [
     status: 'published',
     likesCount: 14,
     isLiked: 0,
-    imageUrl: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=800&auto=format&fit=crop&q=60',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    // Локальные медиа-файлы из проекта (грузятся моментально и оффлайн)
+    imageUrl: '/media/index_orders_created_at.jpg',
+    videoUrl: '/media/index_orders_created_at.mp4',
     authorUsername: 'db_architect',
     createdAt: '2026-03-01T10:00:00.000Z',
   },
@@ -49,8 +50,8 @@ export const MOCK_INDEXES: IndexItem[] = [
     status: 'published',
     likesCount: 29,
     isLiked: 1,
-    imageUrl: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&auto=format&fit=crop&q=60',
-    videoUrl: '', // Пустое видео для демонстрации fallback
+    imageUrl: '/media/index_logs_timestamp.jpg',
+    videoUrl: '/media/index_logs_timestamp.mp4',
     authorUsername: 'sysadmin',
     createdAt: '2026-03-02T14:30:00.000Z',
   },
@@ -67,8 +68,9 @@ export const MOCK_INDEXES: IndexItem[] = [
     status: 'published',
     likesCount: 9,
     isLiked: 0,
-    imageUrl: '', // Пустое изображение для демонстрации DefaultImage.jpg (Скриншоты 4-5)
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+    // Специально оставляем пустым для демонстрации DefaultImage.jpg (Скриншоты 4-5)
+    imageUrl: '',
+    videoUrl: '/media/index_users_email.mp4',
     authorUsername: 'sec_engineer',
     createdAt: '2026-03-03T09:15:00.000Z',
   },
@@ -85,8 +87,9 @@ export const MOCK_INDEXES: IndexItem[] = [
     status: 'published',
     likesCount: 37,
     isLiked: 1,
-    imageUrl: '', // Пустое изображение для демонстрации DefaultImage.jpg
-    videoUrl: '', // Пустое видео для демонстрации fallback
+    // Специально пустое изображение и видео для демонстрации DefaultImage.jpg и DefaultVideo.mp4
+    imageUrl: '',
+    videoUrl: '',
     authorUsername: 'lead_dev',
     createdAt: '2026-03-04T18:00:00.000Z',
   },
