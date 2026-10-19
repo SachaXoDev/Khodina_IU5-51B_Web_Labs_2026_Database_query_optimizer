@@ -12,16 +12,21 @@ export const DetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { cards } = useOutletContext<AppOutletContext>();
   const [pageData, setPageData] = useState<IndexItem | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     const fromList = cards.find((item) => String(item.id) === id);
     if (fromList) {
       setPageData(fromList);
+      setIsExpanded(false);
       return;
     }
     fetchIndexById(id).then((res) => {
-      if (res) setPageData(res);
+      if (res) {
+        setPageData(res);
+        setIsExpanded(false);
+      }
     });
   }, [id, cards]);
 
@@ -48,7 +53,7 @@ export const DetailPage: React.FC = () => {
 
   return (
     <div className="vibes-feed-container">
-      {/* Кнопка "Назад к плитке" */}
+      {/* Кнопка "Закрыть" (возврат к каталогу) */}
       <button
         type="button"
         style={{
@@ -94,7 +99,7 @@ export const DetailPage: React.FC = () => {
         <div className="vibes-gradient-overlay"></div>
       </div>
 
-      {/* Боковая панель */}
+      {/* Боковая панель действий и параметров */}
       <div className="vibes-sidebar-actions">
         <div className="vibes-action-btn">
           <div className="action-icon-circle">
@@ -103,8 +108,8 @@ export const DetailPage: React.FC = () => {
               width="22"
               height="22"
               viewBox="0 0 24 24"
-              fill={isLiked ? '#1ee46a' : 'none'}
-              stroke={isLiked ? '#1ee46a' : '#ffffff'}
+              fill={isLiked ? '#1fdc6f' : 'none'}
+              stroke={isLiked ? '#1fdc6f' : '#ffffff'}
               strokeWidth="2"
             >
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -130,9 +135,19 @@ export const DetailPage: React.FC = () => {
           </div>
           <span className="action-count next-label">Далее</span>
         </button>
+
+        <div className="vibes-side-metric" title="Мощность индекса (Cardinality)">
+          <span className="side-metric-label">CARDINALITY</span>
+          <span className="side-metric-val">{pageData.cardinality}</span>
+        </div>
+
+        <div className="vibes-side-metric" title="Оценочное время создания">
+          <span className="side-metric-label">ВРЕМЯ</span>
+          <span className="side-metric-val">~{pageData.estimatedCreationTimeSec}s</span>
+        </div>
       </div>
 
-      {/* Оверлей снизу */}
+      {/* Оверлей снизу с описанием и кнопкой больше/меньше */}
       <div className="vibes-bottom-overlay">
         <div className="vibes-tags-row">
           <span className="vibes-type-pill">{pageData.indexType} Index</span>
@@ -143,19 +158,18 @@ export const DetailPage: React.FC = () => {
 
         <h2 className="vibes-title">{pageData.indexName}</h2>
 
-        <p className="vibes-desc-text" style={{ WebkitLineClamp: 'unset', maxHeight: '120px', overflowY: 'auto' }}>
-          {pageData.fullDescription || pageData.shortDescription}
-        </p>
+        <div className="vibes-desc-wrapper">
+          <p className={`vibes-desc-text ${isExpanded ? 'expanded' : 'collapsed'}`}>
+            {pageData.fullDescription || pageData.shortDescription}
+          </p>
 
-        <div className="vibes-metrics-grid">
-          <div className="vibes-metric-card">
-            <span className="metric-card-label">ВРЕМЯ</span>
-            <span className="metric-card-val">~{pageData.estimatedCreationTimeSec} s</span>
-          </div>
-          <div className="vibes-metric-card">
-            <span className="metric-card-label">CARDINALITY</span>
-            <span className="metric-card-val">{Number(pageData.cardinality).toLocaleString()}</span>
-          </div>
+          <button
+            type="button"
+            className="desc-toggle-btn"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
+            {isExpanded ? 'меньше' : 'больше'}
+          </button>
         </div>
       </div>
     </div>

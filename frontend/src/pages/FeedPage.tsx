@@ -13,6 +13,8 @@ export const FeedPage: React.FC = () => {
     if (currentIndex >= cards.length) {
       setCurrentIndex(0);
     }
+    // При переключении карточки сбрасываем раскрытие
+    setIsExpanded(false);
   }, [cards.length, currentIndex]);
 
   const currentItem = cards[currentIndex];
@@ -67,17 +69,15 @@ export const FeedPage: React.FC = () => {
         <div className="vibes-gradient-overlay"></div>
       </div>
 
-      {/* Верхний статус-бар Vibes */}
+      {/* Верхний статус-бар Vibes: только бренд с live-dot (без 1/8 по требованию) */}
       <div className="vibes-top-bar">
         <div className="vibes-brand">
+          <span className="live-dot"></span>
           <span className="brand-logo-text">DB OPTIMIZER</span>
-        </div>
-        <div className="vibes-counter">
-          {currentIndex + 1} / {cards.length}
         </div>
       </div>
 
-      {/* Боковая панель действий Vibes (справа) - 1-в-1 из ЛР-2 */}
+      {/* Боковая панель действий и параметров Vibes (справа) - 1-в-1 из ЛР-2 */}
       <div className="vibes-sidebar-actions">
         {/* Кнопка лайка */}
         <button className="vibes-action-btn" onClick={handleLike} title="Лайк">
@@ -119,6 +119,18 @@ export const FeedPage: React.FC = () => {
           </div>
           <span className="action-count next-label">Далее</span>
         </button>
+
+        {/* Параметр 1: CARDINALITY (как в ЛР-2) */}
+        <div className="vibes-side-metric" title="Мощность индекса (Cardinality)">
+          <span className="side-metric-label">CARDINALITY</span>
+          <span className="side-metric-val">{currentItem.cardinality}</span>
+        </div>
+
+        {/* Параметр 2: ВРЕМЯ (как в ЛР-2) */}
+        <div className="vibes-side-metric" title="Оценочное время создания">
+          <span className="side-metric-label">ВРЕМЯ</span>
+          <span className="side-metric-val">~{currentItem.estimatedCreationTimeSec}s</span>
+        </div>
       </div>
 
       {/* Нижний информационный оверлей Vibes (поверх видео) - 1-в-1 из ЛР-2 */}
@@ -134,33 +146,19 @@ export const FeedPage: React.FC = () => {
         {/* Название индекса */}
         <h2 className="vibes-title">{currentItem.indexName}</h2>
 
-        {/* Описание со сворачиванием/разворачиванием "больше / меньше" */}
+        {/* Текстовое описание: свернуть / развернуть (больше / меньше) */}
         <div className="vibes-desc-wrapper">
-          <p
-            className="vibes-desc-text"
-            style={isExpanded ? { WebkitLineClamp: 'unset', maxHeight: '180px', overflowY: 'auto' } : {}}
-          >
+          <p className={`vibes-desc-text ${isExpanded ? 'expanded' : 'collapsed'}`}>
             {currentItem.fullDescription || currentItem.shortDescription}
           </p>
 
-          <span
+          <button
+            type="button"
             className="desc-toggle-btn"
             onClick={() => setIsExpanded(!isExpanded)}
           >
             {isExpanded ? 'меньше' : 'больше'}
-          </span>
-        </div>
-
-        {/* Метрики производительности (ВРЕМЯ СОЗДАНИЯ, CARDINALITY) */}
-        <div className="vibes-metrics-grid">
-          <div className="vibes-metric-card">
-            <span className="metric-card-label">ВРЕМЯ СОЗДАНИЯ</span>
-            <span className="metric-card-val">~{currentItem.estimatedCreationTimeSec} s</span>
-          </div>
-          <div className="vibes-metric-card">
-            <span className="metric-card-label">CARDINALITY</span>
-            <span className="metric-card-val">{Number(currentItem.cardinality).toLocaleString()}</span>
-          </div>
+          </button>
         </div>
       </div>
     </div>

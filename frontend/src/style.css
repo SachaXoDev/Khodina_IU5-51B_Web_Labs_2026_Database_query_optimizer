@@ -499,7 +499,7 @@ html, body {
   left: 14px;
   right: 14px;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   z-index: 5;
 }
@@ -515,28 +515,24 @@ html, body {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.vibes-counter {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--color-text-muted);
-  background: rgba(13, 14, 16, 0.7);
-  backdrop-filter: blur(10px);
-  padding: 6px 12px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #1fdc6f;
+  box-shadow: 0 0 6px #1fdc6f;
 }
 
-/* Боковая панель действий Vibes (справа) */
+/* Боковая панель действий и параметров Vibes (справа, как в ЛР-2) */
 .vibes-sidebar-actions {
   position: absolute;
   right: 14px;
-  top: 48%;
-  transform: translateY(-50%);
+  bottom: 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  z-index: 5;
+  gap: 10px;
+  z-index: 10;
 }
 
 .vibes-action-btn {
@@ -545,15 +541,16 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   cursor: pointer;
   text-decoration: none;
   color: #fff;
+  padding: 0;
 }
 
 .action-icon-circle {
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: rgba(30, 32, 38, 0.88);
   backdrop-filter: blur(10px);
@@ -575,9 +572,46 @@ html, body {
 }
 
 .action-count {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: #c9d1d9;
+}
+
+.action-count.next-label {
+  font-size: 11px;
+}
+
+.vibes-side-metric {
+  background: rgba(18, 20, 26, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  padding: 5px 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 58px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+.side-metric-label {
+  font-size: 8px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.side-metric-val {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: #1fdc6f;
+  line-height: 1.1;
+  letter-spacing: -0.2px;
 }
 
 /* Нижний оверлей Vibes */
@@ -586,12 +620,12 @@ html, body {
   bottom: 0;
   left: 0;
   width: 100%;
-  padding: 16px 14px 10px 14px;
-  z-index: 4;
+  padding: 16px 14px 14px 14px;
+  z-index: 10;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: 82%;
+  max-width: 78%;
 }
 
 .vibes-tags-row {
@@ -602,7 +636,7 @@ html, body {
 }
 
 .vibes-type-pill {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: #ffffff;
   background: rgba(22, 24, 29, 0.82);
@@ -613,7 +647,7 @@ html, body {
 }
 
 .vibes-table-pill {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: #10b981;
   background: rgba(22, 24, 29, 0.82);
@@ -625,57 +659,59 @@ html, body {
 
 .vibes-title {
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 800;
   color: #ffffff;
   letter-spacing: -0.3px;
   line-height: 1.2;
 }
 
-.desc-toggle-btn {
-  color: #1fdc6f;
-  cursor: pointer;
-  font-weight: 600;
-  margin-left: 6px;
-  font-size: 12px;
+/* Описание: свернуть / развернуть (больше / меньше) */
+.vibes-desc-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .vibes-desc-text {
   font-size: 13px;
-  color: #e2e8f0;
-  line-height: 1.4;
+  color: #f1f5f9;
+  line-height: 1.45;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  margin: 0;
+  transition: all 0.2s ease;
 }
 
-.vibes-metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(110px, auto));
-  gap: 8px;
-  width: fit-content;
+.vibes-desc-text.collapsed {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.vibes-metric-card {
-  background: rgba(18, 20, 26, 0.75);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 10px;
-  padding: 6px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.vibes-desc-text.expanded {
+  display: block;
+  max-height: 180px;
+  overflow-y: auto;
 }
 
-.metric-card-label {
-  font-size: 9px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.45);
-  text-transform: uppercase;
+.desc-toggle-btn {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 14px;
+  font-weight: 700;
+  color: #00d68f; /* Зелёный акцент "больше", как в ЛР-2 */
+  cursor: pointer;
+  margin-top: 4px;
+  padding: 2px 0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  user-select: none;
+  background: none;
+  border: none;
 }
 
-.metric-card-val {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  color: #ffffff;
+.desc-toggle-btn:hover {
+  text-decoration: underline;
 }
 
 /* ==========================================================================
