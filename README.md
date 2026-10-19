@@ -122,4 +122,4 @@ cd frontend
 npm install
 npm run dev
 ```
-Приложение откроется по адресу: **`http://localhost:5173`**.
+Приложение откроется по адресу: **`http://127.0.0.1:5175`** (или `http://localhost:5175`).
