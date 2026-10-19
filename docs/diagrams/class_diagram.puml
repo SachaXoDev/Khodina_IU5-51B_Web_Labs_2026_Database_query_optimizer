@@ -152,8 +152,6 @@ package "Backend: DTO & Data Transfer Objects" #E1F5FE {
     + current: IndexResponseDto
     + prevId: number | null
     + nextId: number | null
-    + hasPrev: boolean
-    + hasNext: boolean
   }
 
   class CreateDraftDto {
