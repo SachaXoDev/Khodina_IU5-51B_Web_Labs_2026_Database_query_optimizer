@@ -27,8 +27,9 @@ export const ListPage: React.FC = () => {
     loadData();
   }, []);
 
-  const handleFilterSubmit = () => {
-    loadData(cardinality);
+  const handleFilterSubmit = (val?: string) => {
+    const targetVal = val !== undefined ? val : cardinality;
+    loadData(targetVal);
   };
 
   const handleResetFilter = () => {

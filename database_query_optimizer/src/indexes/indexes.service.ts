@@ -212,7 +212,7 @@ export class IndexesService implements OnModuleInit {
     }
 
     if (filters.minCardinality !== undefined) {
-      qb.andWhere('index.cardinality >= :minCardinality', { minCardinality: filters.minCardinality });
+      qb.andWhere('index.cardinality = :minCardinality', { minCardinality: filters.minCardinality });
     }
 
     qb.orderBy('index.id', 'ASC');

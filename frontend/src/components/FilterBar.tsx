@@ -3,7 +3,7 @@ import React from 'react';
 interface FilterBarProps {
   cardinality: string;
   setCardinality: (val: string) => void;
-  onSubmit: () => void;
+  onSubmit: (val?: string) => void;
 }
 
 export const FilterBar: React.FC<FilterBarProps> = ({
@@ -17,7 +17,9 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   };
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCardinality(e.target.value);
+    const val = e.target.value;
+    setCardinality(val);
+    onSubmit(val);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
