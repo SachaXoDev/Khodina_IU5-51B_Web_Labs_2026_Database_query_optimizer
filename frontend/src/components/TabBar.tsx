@@ -11,25 +11,7 @@ export const TabBar: React.FC = () => {
 
   return (
     <nav className="mobile-tabbar">
-      {/* 1. Плитка — доступна (переход на /) */}
-      <button
-        type="button"
-        className={`tab-item ${isList ? 'active' : ''}`}
-        onClick={() => navigate(ROUTES.LIST)}
-        title="Плитка каталога услуг"
-      >
-        <div className="tab-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
-          </svg>
-        </div>
-        <span className="tab-label">{ROUTE_LABELS.LIST}</span>
-      </button>
-
-      {/* 2. Лента — доступна (переход на /feed) */}
+      {/* 1. Лента — доступна (переход на /feed) */}
       <button
         type="button"
         className={`tab-item ${isFeed ? 'active' : ''}`}
@@ -44,7 +26,7 @@ export const TabBar: React.FC = () => {
         <span className="tab-label">{ROUTE_LABELS.FEED}</span>
       </button>
 
-      {/* 3. Добавление — недоступно гостю (disabled по ТЗ) */}
+      {/* 2. Добавление — недоступно гостю (disabled по ТЗ) */}
       <button
         type="button"
         className="tab-item disabled"
@@ -61,6 +43,24 @@ export const TabBar: React.FC = () => {
         <span className="tab-label">
           {ROUTE_LABELS.CREATE} 🔒
         </span>
+      </button>
+
+      {/* 3. Плитка — доступна (переход на /) */}
+      <button
+        type="button"
+        className={`tab-item ${isList ? 'active' : ''}`}
+        onClick={() => navigate(ROUTES.LIST)}
+        title="Плитка каталога услуг"
+      >
+        <div className="tab-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+        </div>
+        <span className="tab-label">{ROUTE_LABELS.LIST}</span>
       </button>
 
       {/* 4. Вход — недоступен гостю (disabled по ТЗ) */}

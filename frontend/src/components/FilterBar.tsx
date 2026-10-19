@@ -1,4 +1,6 @@
 import React from 'react';
+import Form from 'react-bootstrap/Form';
+import Button from 'react-bootstrap/Button';
 
 interface FilterBarProps {
   cardinality: string;
@@ -29,11 +31,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   const numValue = cardinality === '' ? 0 : Math.min(5000000, Math.max(0, parseInt(cardinality, 10) || 0));
 
   return (
-    <form onSubmit={handleSubmit} className="filter-cardinality-box">
-      {/* Поле ввода Cardinality и кнопка Найти */}
+    <Form onSubmit={handleSubmit} className="filter-cardinality-box">
+      {/* Поле ввода Cardinality и кнопка Найти с использованием React-Bootstrap Form и Button */}
       <div className="search-form-row">
         <div className="search-input-box">
-          <input
+          <Form.Control
             type="number"
             id="num-query"
             min="0"
@@ -46,15 +48,14 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           />
         </div>
 
-        <button type="submit" className="btn-search-action">
+        <Button type="submit" className="btn-search-action">
           Найти
-        </button>
+        </Button>
       </div>
 
-      {/* Числовой слайдер (ползунок) диапазона Cardinality (как в ЛР-2) */}
+      {/* Числовой слайдер диапазона Cardinality (React-Bootstrap Form.Range) */}
       <div className="slider-row">
-        <input
-          type="range"
+        <Form.Range
           id="slider-query"
           min="0"
           max="5000000"
@@ -70,8 +71,9 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           <span>5M+</span>
         </div>
       </div>
-    </form>
+    </Form>
   );
 };
 
 export default FilterBar;
+

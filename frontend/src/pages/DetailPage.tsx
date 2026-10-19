@@ -6,6 +6,7 @@ import { ROUTES } from '../Routes';
 import { AppOutletContext } from '../AppLayout';
 
 const defaultImage = '/DefaultImage.jpg';
+const defaultVideo = '/DefaultVideo.mp4';
 
 export const DetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -85,15 +86,28 @@ export const DetailPage: React.FC = () => {
             loop
             muted
             playsInline
+            onError={(e) => {
+              (e.target as HTMLVideoElement).src = defaultVideo;
+            }}
           />
-        ) : (
+        ) : pageData.imageUrl ? (
           <img
             className="vibes-video-bg"
-            src={pageData.imageUrl || defaultImage}
+            src={pageData.imageUrl}
             alt={pageData.indexName}
             onError={(e) => {
               (e.target as HTMLImageElement).src = defaultImage;
             }}
+          />
+        ) : (
+          <video
+            key="fallback-video"
+            className="vibes-video-bg"
+            src={defaultVideo}
+            autoPlay
+            loop
+            muted
+            playsInline
           />
         )}
         <div className="vibes-gradient-overlay"></div>

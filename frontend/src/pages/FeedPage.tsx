@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { AppOutletContext } from '../AppLayout';
 
 const defaultImage = '/DefaultImage.jpg';
+const defaultVideo = '/DefaultVideo.mp4';
 
 export const FeedPage: React.FC = () => {
   const { cards } = useOutletContext<AppOutletContext>();
@@ -55,15 +56,28 @@ export const FeedPage: React.FC = () => {
             loop
             muted
             playsInline
+            onError={(e) => {
+              (e.target as HTMLVideoElement).src = defaultVideo;
+            }}
           />
-        ) : (
+        ) : currentItem.imageUrl ? (
           <img
             className="vibes-video-bg"
-            src={currentItem.imageUrl || defaultImage}
+            src={currentItem.imageUrl}
             alt={currentItem.indexName}
             onError={(e) => {
               (e.target as HTMLImageElement).src = defaultImage;
             }}
+          />
+        ) : (
+          <video
+            key="fallback-video"
+            className="vibes-video-bg"
+            src={defaultVideo}
+            autoPlay
+            loop
+            muted
+            playsInline
           />
         )}
         <div className="vibes-gradient-overlay"></div>
