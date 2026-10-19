@@ -455,9 +455,11 @@ html, body {
   position: relative;
   flex: 1;
   width: 100%;
-  height: calc(844px - 64px - 40px);
+  height: 100%;
   overflow: hidden;
   background-color: #000;
+  padding-bottom: 64px; /* Оставляем место ровно под высоту таб-бара */
+  box-sizing: border-box;
 }
 
 .vibes-media-layer {
@@ -527,7 +529,7 @@ html, body {
 .vibes-sidebar-actions {
   position: absolute;
   right: 14px;
-  bottom: 24px;
+  bottom: 84px; /* Приподнята над таб-баром (64px + 20px отступ) */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -617,15 +619,15 @@ html, body {
 /* Нижний оверлей Vibes */
 .vibes-bottom-overlay {
   position: absolute;
-  bottom: 0;
+  bottom: 74px; /* Приподнят над таб-баром (64px + 10px), больше не перекрывается */
   left: 0;
   width: 100%;
-  padding: 16px 14px 14px 14px;
+  padding: 16px 14px 10px 14px;
   z-index: 10;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: 78%;
+  max-width: 76%;
 }
 
 .vibes-tags-row {
