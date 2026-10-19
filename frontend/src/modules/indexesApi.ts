@@ -35,8 +35,8 @@ export const fetchIndexes = async (filters: FilterParams = {}): Promise<IndexIte
     if (filters.indexType) {
       result = result.filter((x) => x.indexType === filters.indexType);
     }
-    if (filters.minCardinality) {
-      result = result.filter((x) => x.cardinality >= Number(filters.minCardinality));
+    if (filters.minCardinality !== undefined && !isNaN(filters.minCardinality)) {
+      result = result.filter((x) => x.cardinality === Number(filters.minCardinality));
     }
     return result;
   }
