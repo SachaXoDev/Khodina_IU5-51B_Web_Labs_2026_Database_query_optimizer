@@ -52,6 +52,9 @@ database_query_optimizer/
 │   ├── app.module.ts                     # Главный модуль с подключением TypeORM, Redis и Config
 │   └── main.ts                           # GlobalPrefix('api'), SwaggerModule, cookieParser, CORS
 ├── docker-compose.yml                    # Контейнеры Postgres, Adminer, MinIO, Redis
+├── scripts/                              # Скрипты на языке Lua для работы с Redis (Лекция №6)
+│   ├── get_active_sessions.lua           # Атомарное получение всех активных сессий, userId и TTL
+│   └── clean_user_sessions.lua           # Атомарное завершение всех сессий пользователя
 └── docs/                                 # Диаграммы StarUML (РИП.mdj), Sequence диаграмма, вопросы ЛР4
 ```
 
@@ -81,6 +84,11 @@ database_query_optimizer/
    * Построена в StarUML (файл `РИП.mdj`) для всего бизнес-процесса без БД и нативного клиента.
    * Линии жизни: `Фронтенд (гость)`, `Фронтенд (создатель)`, `: Домен users`, `: Домен indexes`.
    * Свойства `signature` у каждого сообщения переиспользованы из операций классов диаграммы бэкенда (`POST Login`, `GET Indexes`, `POST Index`, `GET Draft`, `PUT Index`, `GET Feed`, `POST Like`).
+7. **Скрипты на языке Lua в Redis (Лекция №6, слайд 10):**
+   * В соответствии с лекционным материалом («*Или написать целый скрипт на языке Lua для получения активных сессий пользователей*») реализован атомарный скрипт `scripts/get_active_sessions.lua`.
+   * Скрипт обходит все ключи сессий `session:*` и за один вызов команды `EVAL` извлекает `sessionId`, `userId` и оставшийся `TTL`, исключая сетевые задержки и состояние гонки.
+   * Также поддержан скрипт `scripts/clean_user_sessions.lua` для атомарного завершения всех сессий конкретного пользователя.
+   * На бэкенде в `SessionService` реализован метод `getActiveSessionsWithLua()`, а в Swagger выведен эндпоинт `GET /api/auth/sessions`.
 
 ---
 
@@ -92,6 +100,7 @@ database_query_optimizer/
 | `POST` | `/api/auth/login` | Гость | `{ username, password }` | Вход: создание сессии в Redis, возврат `Set-Cookie: sessionId` |
 | `POST` | `/api/auth/logout` | Создатель | `Cookie: sessionId` | Выход: мгновенное удаление сессии из Redis |
 | `GET` | `/api/auth/me` | Создатель | `Cookie: sessionId` | Получение профиля текущего авторизованного пользователя |
+| `GET` | `/api/auth/sessions` | Все | — | Получение активных сессий через Lua-скрипт (Лекция №6) |
 | `GET` | `/api/indexes` | Все | Query: `search`, `indexType`, `minCardinality` | Каталог опубликованных индексов с флагом `isOwner: 0/1` |
 | `GET` | `/api/indexes/feed` | Все | Query: `id`, `next=true` | Циклическая лента видеороликов индексов |
 | `GET` | `/api/indexes/draft` | Создатель | `Cookie: sessionId` | Получение черновика текущего пользователя |
@@ -130,7 +139,18 @@ npm run start:dev
 3. Нажмите кнопку **Authorize** в правом верхнем углу, вставьте `sessionId` и сохраните.
 4. Теперь все защищенные методы создателя будут выполняться от имени авторизованного пользователя.
 
-### Шаг 4. Проверка содержимого Redis в консоли
+### Шаг 4. Проверка содержимого Redis и выполнение Lua-скриптов
+
+#### Вариант А. Через скрипт на языке Lua (рекомендуемый, по Лекции №6):
+```bash
+# Выполнение Lua-скрипта получения всех активных сессий с userId и TTL
+docker exec -i lab_redis redis-cli EVAL "$(cat scripts/get_active_sessions.lua)" 0
+
+# Либо через эндпоинт в браузере / Swagger:
+# GET http://localhost:3000/api/auth/sessions
+```
+
+#### Вариант Б. Обычные консольные команды:
 ```bash
 # Список активных сессий
 docker exec lab_redis redis-cli KEYS "*"

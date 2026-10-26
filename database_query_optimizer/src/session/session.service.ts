@@ -60,6 +60,39 @@ export class SessionService implements OnModuleDestroy {
   }
 
   /**
+   * Получение всех активных сессий с помощью Lua-скрипта в Redis
+   * Соответствует требованию Лекции №6 (слайд 10):
+   * «Написать целый скрипт на языке Lua для получения активных сессий пользователей»
+   * Выполняется атомарно внутри движка Redis через команду EVAL.
+   */
+  async getActiveSessionsWithLua(): Promise<Array<{ sessionId: string; userId: number; ttl: number }>> {
+    const luaScript = `
+      local keys = redis.call('KEYS', 'session:*')
+      local result = {}
+      for i, key in ipairs(keys) do
+        local val = redis.call('GET', key)
+        local ttl = redis.call('TTL', key)
+        table.insert(result, key .. '|' .. tostring(val) .. '|' .. tostring(ttl))
+      end
+      return result
+    `;
+
+    const raw = (await this.redis.eval(luaScript, 0)) as string[];
+    if (!raw || !Array.isArray(raw)) {
+      return [];
+    }
+
+    return raw.map((entry) => {
+      const [key, userId, ttl] = entry.split('|');
+      return {
+        sessionId: key.replace('session:', ''),
+        userId: parseInt(userId, 10),
+        ttl: parseInt(ttl, 10),
+      };
+    });
+  }
+
+  /**
    * Получить доступ к инстансу Redis (для проверок и тестов)
    */
   getClient(): Redis {

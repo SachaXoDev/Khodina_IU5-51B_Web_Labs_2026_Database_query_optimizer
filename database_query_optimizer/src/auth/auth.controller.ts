@@ -89,4 +89,28 @@ export class AuthController {
       sessionId: req.sessionId,
     };
   }
+
+  @Get('sessions')
+  @ApiOperation({
+    summary: 'Получение всех активных сессий через Lua-скрипт в Redis (Лекция №6, слайд 10)',
+    description: 'Выполняет атомарный скрипт на языке Lua (EVAL) внутри движка Redis для сбора session:* ключей, userId и оставшегося TTL',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Список активных сессий пользователей, полученный через Lua-скрипт',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          sessionId: { type: 'string', example: 'd3b07384-d113-4638-b765-b7705139c7a7' },
+          userId: { type: 'number', example: 1 },
+          ttl: { type: 'number', example: 3540 },
+        },
+      },
+    },
+  })
+  async getActiveSessions() {
+    return this.authService.getActiveSessions();
+  }
 }

@@ -92,4 +92,12 @@ export class AuthService {
     }
     return user;
   }
+
+  /**
+   * Получение всех активных сессий пользователей из Redis через скрипт на языке Lua
+   * (Требование Лекции №6, слайд 10)
+   */
+  async getActiveSessions(): Promise<Array<{ sessionId: string; userId: number; ttl: number }>> {
+    return this.sessionService.getActiveSessionsWithLua();
+  }
 }
