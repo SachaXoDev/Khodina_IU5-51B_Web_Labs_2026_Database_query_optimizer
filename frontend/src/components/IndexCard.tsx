@@ -5,11 +5,12 @@ interface IndexCardProps {
   item: IndexItem;
   onClick: () => void;
   onDelete?: (e: React.MouseEvent) => void;
+  onLikeToggle?: () => void;
 }
 
 const defaultImage = '/DefaultImage.jpg';
 
-export const IndexCard: React.FC<IndexCardProps> = ({ item, onClick, onDelete }) => {
+export const IndexCard: React.FC<IndexCardProps> = ({ item, onClick, onDelete, onLikeToggle }) => {
   const isLiked = item.isLiked === 1;
 
   const handleDeleteClick = (e: React.MouseEvent) => {
@@ -60,8 +61,18 @@ export const IndexCard: React.FC<IndexCardProps> = ({ item, onClick, onDelete })
             <span className="default-badge">default image</span>
           )}
 
-          {/* Бейдж лайков (как в ЛР-2) */}
-          <div className={`tile-likes-badge ${isLiked ? 'liked' : 'unliked'}`}>
+          {/* Бейдж лайков (клик ставит/снимает лайк без перехода в ленту) */}
+          <div
+            className={`tile-likes-badge ${isLiked ? 'liked' : 'unliked'}`}
+            style={{ cursor: 'pointer' }}
+            title="Поставить / убрать лайк"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onLikeToggle) {
+                onLikeToggle();
+              }
+            }}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="13"

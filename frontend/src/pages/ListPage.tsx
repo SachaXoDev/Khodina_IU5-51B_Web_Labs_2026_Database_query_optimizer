@@ -23,13 +23,15 @@ export const ListPage: React.FC = () => {
     setLoading(false);
   };
 
+  // Если карточек нет (например, первый рендер), инициализируем их
   useEffect(() => {
-    loadData();
+    if (cards.length === 0) {
+      loadData();
+    }
   }, []);
 
-  const handleFilterSubmit = (val?: string) => {
-    const targetVal = val !== undefined ? val : cardinality;
-    loadData(targetVal);
+  const handleFilterSubmit = () => {
+    loadData(cardinality);
   };
 
   const handleResetFilter = () => {
@@ -38,7 +40,20 @@ export const ListPage: React.FC = () => {
   };
 
   const handleCardClick = (id: number) => {
-    navigate(`${ROUTES.DETAIL}/${id}`);
+    navigate(`${ROUTES.FEED}?id=${id}`);
+  };
+
+  const handleLikeToggle = (id: number) => {
+    setCards((prev) =>
+      prev.map((item) => {
+        if (item.id === id) {
+          const nextIsLiked = item.isLiked === 1 ? 0 : 1;
+          const nextLikes = item.likesCount + (nextIsLiked === 1 ? 1 : -1);
+          return { ...item, isLiked: nextIsLiked, likesCount: nextLikes };
+        }
+        return item;
+      })
+    );
   };
 
   const handleDeleteCard = (id: number, name: string) => {
@@ -76,6 +91,7 @@ export const ListPage: React.FC = () => {
                 item={item}
                 onClick={() => handleCardClick(item.id)}
                 onDelete={() => handleDeleteCard(item.id, item.indexName)}
+                onLikeToggle={() => handleLikeToggle(item.id)}
               />
             ))}
           </div>

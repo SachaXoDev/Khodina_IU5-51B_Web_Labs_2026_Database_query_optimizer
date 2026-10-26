@@ -41,7 +41,7 @@ export const TabBar: React.FC = () => {
           </svg>
         </div>
         <span className="tab-label">
-          {ROUTE_LABELS.CREATE} 🔒
+          {ROUTE_LABELS.CREATE}
         </span>
       </button>
 
@@ -77,7 +77,7 @@ export const TabBar: React.FC = () => {
           </svg>
         </div>
         <span className="tab-label">
-          {ROUTE_LABELS.LOGIN} 🔒
+          {ROUTE_LABELS.LOGIN}
         </span>
       </button>
     </nav>

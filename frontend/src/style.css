@@ -100,9 +100,9 @@ html, body {
 
 /* Шапка экрана ЛР-2 */
 .mobile-header {
-  height: 48px;
-  min-height: 48px;
-  padding: 0 20px;
+  height: 56px;
+  min-height: 56px;
+  padding: 12px 20px 0 20px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -216,26 +216,47 @@ html, body {
   color: #6e7681;
 }
 
-.btn-search-action {
-  background-color: #1fdc6f;
-  border: none;
-  color: #0b0c0e;
-  padding: 0 20px;
-  height: 46px;
-  border-radius: 12px;
-  font-family: var(--font-sans);
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
-  transition: opacity 0.15s;
+/* ==========================================================================
+   REACT-BOOTSTRAP OVERRIDES (Убираем стандартную синеву Bootstrap)
+   ========================================================================== */
+.btn-search-action,
+button.btn.btn-primary.btn-search-action,
+.btn-primary {
+  background-color: #1fdc6f !important;
+  border-color: #1fdc6f !important;
+  color: #0b0c0e !important;
+  box-shadow: none !important;
 }
 
-.btn-search-action:hover {
-  opacity: 0.9;
+.btn-search-action:hover,
+button.btn.btn-primary.btn-search-action:hover {
+  background-color: #19be5f !important;
+  border-color: #19be5f !important;
+  color: #0b0c0e !important;
+}
+
+.search-input-field:focus,
+input.form-control.search-input-field:focus {
+  background-color: #16181d !important;
+  color: #fff !important;
+  border-color: #1fdc6f !important;
+  box-shadow: 0 0 0 2px rgba(31, 220, 111, 0.25) !important;
+}
+
+/* Слайдер Bootstrap Form.Range в фирменном зелёном стиле */
+input.form-range.cardinality-range-slider::-webkit-slider-thumb {
+  background-color: #1fdc6f !important;
+  border: 2px solid #0d0e11 !important;
+  box-shadow: 0 0 8px rgba(31, 220, 111, 0.6) !important;
+}
+
+input.form-range.cardinality-range-slider::-moz-range-thumb {
+  background-color: #1fdc6f !important;
+  border: 2px solid #0d0e11 !important;
+}
+
+input.form-range.cardinality-range-slider:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(31, 220, 111, 0.35) !important;
 }
 
 .slider-row {
@@ -447,6 +468,8 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+
 
 /* ==========================================================================
    VIBES FEED: Полноэкранный TikTok / Reels интерфейс из ЛР-2

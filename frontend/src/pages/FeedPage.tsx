@@ -1,22 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { AppOutletContext } from '../AppLayout';
 
 const defaultImage = '/DefaultImage.jpg';
 const defaultVideo = '/DefaultVideo.mp4';
 
 export const FeedPage: React.FC = () => {
-  const { cards } = useOutletContext<AppOutletContext>();
+  const { cards, setCards } = useOutletContext<AppOutletContext>();
+  const [searchParams] = useSearchParams();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Синхронизируем начальный индекс ТОЛЬКО при смене URL параметра ?id=
+  const idParam = searchParams.get('id');
   useEffect(() => {
-    if (currentIndex >= cards.length) {
-      setCurrentIndex(0);
+    if (idParam && cards.length > 0) {
+      const targetIdx = cards.findIndex((item) => String(item.id) === idParam);
+      if (targetIdx !== -1) {
+        setCurrentIndex(targetIdx);
+      }
     }
+  }, [idParam]);
+
+  useEffect(() => {
     // При переключении карточки сбрасываем раскрытие
     setIsExpanded(false);
-  }, [cards.length, currentIndex]);
+  }, [currentIndex]);
 
   const currentItem = cards[currentIndex];
 
@@ -26,11 +35,17 @@ export const FeedPage: React.FC = () => {
   };
 
   const handleLike = () => {
-    if (currentItem) {
-      currentItem.isLiked = currentItem.isLiked === 1 ? 0 : 1;
-      currentItem.likesCount += currentItem.isLiked === 1 ? 1 : -1;
-      setCurrentIndex((p) => p); // триггер рендера
-    }
+    if (!currentItem) return;
+    const nextIsLiked = currentItem.isLiked === 1 ? 0 : 1;
+    const nextLikes = currentItem.likesCount + (nextIsLiked === 1 ? 1 : -1);
+
+    setCards((prev) =>
+      prev.map((item) =>
+        item.id === currentItem.id
+          ? { ...item, isLiked: nextIsLiked, likesCount: nextLikes }
+          : item
+      )
+    );
   };
 
   if (!currentItem) {

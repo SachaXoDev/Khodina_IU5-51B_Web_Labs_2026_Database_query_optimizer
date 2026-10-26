@@ -11,15 +11,11 @@ export interface AppOutletContext {
 }
 
 export const AppLayout: React.FC = () => {
-  // Список карточек хранится в общем layout и прокидывается дочерним страницам через Outlet context
-  // БЕЗ Redux и БЕЗ React Context по условию лабораторной работы №5
+  // БЕЗ Redux и БЕЗ React Context
   const [cards, setCards] = useState<IndexItem[]>(MOCK_INDEXES);
 
   return (
     <div className="phone-screen">
-      {/* iOS статус-бар (как в ЛР-1/ЛР-2) */}
-      <StatusBar />
-
       {/* Прокручиваемый контент страницы */}
       <Outlet context={{ cards, setCards }} />
 

@@ -5,7 +5,7 @@ import Button from 'react-bootstrap/Button';
 interface FilterBarProps {
   cardinality: string;
   setCardinality: (val: string) => void;
-  onSubmit: (val?: string) => void;
+  onSubmit: () => void;
 }
 
 export const FilterBar: React.FC<FilterBarProps> = ({
@@ -19,9 +19,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   };
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setCardinality(val);
-    onSubmit(val);
+    setCardinality(e.target.value);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
