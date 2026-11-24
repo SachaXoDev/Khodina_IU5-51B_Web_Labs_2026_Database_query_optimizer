@@ -6,6 +6,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { IndexLike } from './index-like.entity';
@@ -17,6 +18,7 @@ export enum IndexStatus {
 }
 
 @Entity('database_indexes')
+@Index('idx_database_indexes_status_cardinality_id', ['status', 'cardinality', 'id'])
 export class DatabaseIndex {
   @PrimaryGeneratedColumn()
   id: number;
@@ -40,6 +42,9 @@ export class DatabaseIndex {
 
   @Column({ name: 'video_url', nullable: true, type: 'varchar', default: 'default_video.mp4' })
   videoUrl: string | null;
+
+  @Column({ name: 'clip_candidate', default: false })
+  clipCandidate: boolean;
 
   // Поля предметной области (Оптимизатор запросов БД)
   @Column({ name: 'table_name', default: 'users', nullable: true })

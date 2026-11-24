@@ -9,14 +9,17 @@ export class MinioService implements OnModuleInit {
   private readonly logger = new Logger(MinioService.name);
   private minioClient: Minio.Client;
   private readonly bucketName: string;
+  private readonly region: string;
 
   constructor(private readonly configService: ConfigService) {
     this.bucketName = this.configService.get<string>('MINIO_BUCKET', 'media');
+    this.region = this.configService.get<string>('MINIO_REGION', 'us-east-1');
 
     this.minioClient = new Minio.Client({
       endPoint: this.configService.get<string>('MINIO_ENDPOINT', 'localhost'),
       port: Number(this.configService.get<number>('MINIO_PORT', 9000)),
       useSSL: this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true',
+      region: this.region,
       accessKey: this.configService.get<string>('MINIO_ACCESS_KEY', 'minioadmin'),
       secretKey: this.configService.get<string>('MINIO_SECRET_KEY', 'minioadminpassword'),
     });
@@ -31,7 +34,7 @@ export class MinioService implements OnModuleInit {
     try {
       const exists = await this.minioClient.bucketExists(this.bucketName);
       if (!exists) {
-        await this.minioClient.makeBucket(this.bucketName, 'us-east-1');
+        await this.minioClient.makeBucket(this.bucketName, this.region);
         this.logger.log(`Бакет "${this.bucketName}" успешно создан в MinIO.`);
       }
     } catch (error: any) {
@@ -136,12 +139,23 @@ export class MinioService implements OnModuleInit {
 
     // Если в БД хранился относительный путь вида /media/xxx.jpg или /assets/xxx.svg, очищаем до чистого имени
     const cleanFileName = fileName.replace(/^\/?(media|assets)\//, '');
+    // Bundled files do not need MinIO; all uploaded keys use the index_* timestamp prefix.
+    if (['assets/default_index.svg', 'assets/default_video.mp4'].includes(fileName.replace(/^\//, ''))) {
+      return `/${fileName.replace(/^\//, '')}`;
+    }
+    if (/^(?:index_(?:users_email|orders_created_at|products_sku|logs_timestamp)|idx_analytics_event_date_btree)\.(?:jpg|mp4)$/.test(cleanFileName)) {
+      return `/media/${cleanFileName}`;
+    }
 
-    // Прямой постоянный URL к объекту в публичном бакете MinIO (без заголовков/сигнатур в строке запроса)
-    const protocol = this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true' ? 'https' : 'http';
-    const endpoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost');
-    const port = this.configService.get<number>('MINIO_PORT', 9000);
-    return `${protocol}://${endpoint}:${port}/${this.bucketName}/${cleanFileName}`;
+    try {
+      // Keep the URL stable across feed polls without keeping an unbounded token cache.
+      const hour = 60 * 60 * 1000;
+      const requestDate = new Date(Math.floor(Date.now() / hour) * hour);
+      return await this.minioClient.presignedGetObject(this.bucketName, cleanFileName, 7 * 24 * 60 * 60, undefined, requestDate);
+    } catch (error) {
+      this.logger.warn(`Не удалось подписать ссылку на ${cleanFileName}: ${String(error)}`);
+      return null;
+    }
   }
 
   /**

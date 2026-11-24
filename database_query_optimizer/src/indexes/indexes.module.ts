@@ -8,6 +8,7 @@ import { IndexLike } from './entities/index-like.entity';
 import { User } from '../users/entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { SessionModule } from '../session/session.module';
+import { FeedStateService } from './feed-state.service';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { SessionModule } from '../session/session.module';
     SessionModule,
   ],
   controllers: [IndexesController],
-  providers: [IndexesService, MinioService],
+  providers: [IndexesService, MinioService, FeedStateService],
   exports: [IndexesService, MinioService],
 })
 export class IndexesModule {}

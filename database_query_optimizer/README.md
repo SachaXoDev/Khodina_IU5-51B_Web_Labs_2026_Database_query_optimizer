@@ -112,3 +112,22 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Дополнительное задание: индексы, пагинация и Redis
+
+Используйте отдельный учебный PostgreSQL, Redis и MinIO (или S3-совместимое хранилище), не рабочую БД. Настройте `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`, `REDIS_HOST`, `REDIS_PORT`, `MINIO_ENDPOINT`, `MINIO_PORT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY` (опционально `MINIO_REGION`). Не добавляйте локальные секреты в Git.
+
+В `database_query_optimizer/` выполните `npm ci` и `npm run build`, затем запустите `PORT=3108 DB_SYNCHRONIZE=true node dist/main.js` для создания схемы и начальных записей. Из корня репозитория:
+
+```sh
+psql "$DEMO_DATABASE_URL" -v demo_seed_confirm=1 -f scripts/demo_optimizer_seed.sql
+psql "$DEMO_DATABASE_URL" -v demo_benchmark_confirm=1 -f scripts/demo_optimizer_benchmark.sql
+python3 scripts/verify-feed.py --api http://127.0.0.1:3108 --redis-port <порт-Redis>
+```
+
+- Seed добавляет 120 000 синтетических карточек и 14 примеров CLIP. Повторный запуск не изменяет существующие записи. Бенчмарк сравнивает планы страницы и точного `COUNT` с составным индексом `(status, cardinality, id)` и без него. Запускайте бенчмарк отдельно от HTTP-показа: DDL берёт блокировку, а удаление индекса выполняется внутри откатываемой транзакции.
+- `GET /api/indexes?minCardinality=420042&limit=24&offset=0` возвращает `items`, `total`, `limit` и `offset`. Историческое имя `minCardinality` означает **точное** равенство; после загрузки seed фильтр находит 750 синтетических карточек. Порядок — по `id`, размер страницы по умолчанию 24, максимум 100.
+- `GET /api/indexes/feed` читает текущую карточку или создаёт случайную партию до 100 ID. `?next=true&id=<текущий ID>` продвигает курсор, а `?id=<ID>` читает карточку без изменения курсора. Сохраняйте cookies между запросами. Скрипт проверки использует `redis-cli`, проверяет переход из позиции 100 в 1, отсутствие повторов ID внутри партии и независимость гостевой и авторизованной лент. Он создаёт одного случайного тестового пользователя.
+- Гостевой `GET /api/indexes/clip-candidates?afterId=0&limit=100` возвращает `items` (`id`, `shortDescription`) и `nextAfterId`. Передавайте курсор до `null`. Синтетические записи бенчмарка исключены, поиск по фото выполняется локально в Tauri.
+
+В каталоге бэкенда `npm test` запускает unit-тесты, а `npm run test:e2e` проверяет HTTP с запущенными сервисами учебного стенда. Swagger доступен по `/api/docs`.

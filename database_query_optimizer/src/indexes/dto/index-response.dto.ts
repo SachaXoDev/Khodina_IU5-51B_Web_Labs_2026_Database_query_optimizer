@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IndexStatus } from '../entities/database-index.entity';
 
 export class IndexResponseDto {
   @ApiProperty({ example: 1, description: 'Уникальный идентификатор индекса' })
@@ -27,6 +28,9 @@ export class IndexResponseDto {
     description: 'Прямой URL к видео в MinIO',
   })
   videoUrl: string | null;
+
+  @ApiProperty({ enum: IndexStatus })
+  status: IndexStatus;
 
   @ApiProperty({ example: 'users', description: 'Название таблицы' })
   tableName: string;
@@ -74,4 +78,42 @@ export class IndexResponseDto {
 export class FeedResponseDto {
   @ApiPropertyOptional({ type: () => IndexResponseDto, description: 'Текущий индекс в ленте' })
   current: IndexResponseDto | null;
+
+  @ApiProperty({ type: Number, nullable: true, description: 'Номер карточки в текущей пачке (с 1)' })
+  position: number | null;
+
+  @ApiProperty({ description: 'Количество карточек в текущей пачке' })
+  batchSize: number;
+}
+
+export class IndexPageDto {
+  @ApiProperty({ type: [IndexResponseDto] })
+  items: IndexResponseDto[];
+
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty()
+  offset: number;
+
+  @ApiProperty()
+  limit: number;
+}
+
+export class ClipCandidateDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty({ minLength: 50, maxLength: 100 })
+  shortDescription: string;
+}
+
+export const CLIP_CANDIDATE_PAGE_SIZE = 100;
+
+export class ClipCandidatePageDto {
+  @ApiProperty({ type: [ClipCandidateDto], maxItems: CLIP_CANDIDATE_PAGE_SIZE })
+  items: ClipCandidateDto[];
+
+  @ApiProperty({ type: Number, nullable: true, description: 'Последний ID для следующей страницы или null в конце' })
+  nextAfterId: number | null;
 }

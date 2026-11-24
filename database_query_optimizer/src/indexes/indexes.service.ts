@@ -7,15 +7,20 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { loadModule, type LanguageIdentifier } from 'cld3-asm';
 import { Repository } from 'typeorm';
 import { DatabaseIndex, IndexStatus } from './entities/database-index.entity';
 import { IndexLike } from './entities/index-like.entity';
 import { User } from '../users/entities/user.entity';
 import { MinioService } from './minio.service';
-import { IndexFiltersDto } from './dto/index-filters.dto';
+import { DEFAULT_INDEX_PAGE_SIZE, IndexFiltersDto, MAX_INDEX_PAGE_SIZE } from './dto/index-filters.dto';
 import { CreateDraftDto } from './dto/create-draft.dto';
 import { PublishIndexDto } from './dto/publish-index.dto';
-import { IndexResponseDto, FeedResponseDto } from './dto/index-response.dto';
+import { ClipCandidateDto, ClipCandidatePageDto, FeedResponseDto, IndexPageDto, IndexResponseDto } from './dto/index-response.dto';
+import { FeedStateService, FEED_BATCH_SIZE } from './feed-state.service';
+
+const DEMO_IMAGE = '/assets/default_index.svg';
+const DEMO_VIDEO = '/assets/default_video.mp4';
 
 @Injectable()
 export class IndexesService implements OnModuleInit {
@@ -29,6 +34,7 @@ export class IndexesService implements OnModuleInit {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly minioService: MinioService,
+    private readonly feedState: FeedStateService,
   ) {}
 
   async onModuleInit() {
@@ -39,22 +45,24 @@ export class IndexesService implements OnModuleInit {
    * Инициализация начальных пользователей и опубликованных индексов
    */
   private async seedInitialData() {
+    let authors: User[];
     const userCount = await this.userRepository.count();
     if (userCount === 0) {
+      // Use generated IDs so later registration does not collide with the sequence.
       this.logger.log('Инициализация начальных пользователей...');
       const author = this.userRepository.create({
-        id: 1,
         username: 'pg_expert',
         password: 'password123',
         role: 'admin',
       });
       const client = this.userRepository.create({
-        id: 2,
         username: 'dba_junior',
         password: 'password123',
         role: 'user',
       });
-      await this.userRepository.save([author, client]);
+      authors = await this.userRepository.save([author, client]);
+    } else {
+      authors = await this.userRepository.find({ order: { id: 'ASC' }, take: 2 });
     }
 
     const count = await this.indexRepository.count();
@@ -139,7 +147,10 @@ export class IndexesService implements OnModuleInit {
       ];
 
       for (const item of initialIndexes) {
-        const entity = this.indexRepository.create(item);
+        const entity = this.indexRepository.create({
+          ...item,
+          authorId: authors[(item.authorId ?? 1) - 1]?.id ?? authors[0]?.id,
+        });
         await this.indexRepository.save(entity);
       }
       this.logger.log('Начальные опубликованные индексы успешно созданы.');
@@ -149,15 +160,18 @@ export class IndexesService implements OnModuleInit {
   /**
    * Преобразование Entity -> DTO с прямыми ссылками на MinIO и расчётом флагов 0/1
    */
-  private async toDto(entity: DatabaseIndex, currentUserId?: number): Promise<IndexResponseDto> {
-    const isLiked = currentUserId
+  private async toDto(entity: DatabaseIndex, currentUserId?: number, liked?: boolean): Promise<IndexResponseDto> {
+    const isLiked = liked ?? (currentUserId
       ? await this.likeRepository.exists({
           where: { indexId: entity.id, userId: currentUserId },
         })
-      : false;
+      : false);
 
-    const imageUrl = await this.minioService.getPresignedUrl(entity.imageUrl);
-    const videoUrl = await this.minioService.getPresignedUrl(entity.videoUrl);
+    const [imageUrl, videoUrl] = await Promise.all([
+      entity.imageUrl === 'default_index.jpg' || entity.imageUrl === 'default_index.svg'
+        ? DEMO_IMAGE : this.minioService.getPresignedUrl(entity.imageUrl),
+      entity.videoUrl === 'default_video.mp4' ? DEMO_VIDEO : this.minioService.getPresignedUrl(entity.videoUrl),
+    ]);
 
     let authorUsername = entity.author ? entity.author.username : null;
     if (!authorUsername && entity.authorId) {
@@ -175,6 +189,7 @@ export class IndexesService implements OnModuleInit {
       videoFileName: entity.videoUrl ?? null,
       imageUrl: imageUrl ?? null,
       videoUrl: videoUrl ?? null,
+      status: entity.status,
       tableName: entity.tableName ?? '',
       indexType: entity.indexType ?? '',
       columnName: entity.columnName ?? '',
@@ -194,10 +209,11 @@ export class IndexesService implements OnModuleInit {
   /**
    * 1. GET /api/indexes — список с фильтрацией (только опубликованные)
    */
-  async findAll(filters: IndexFiltersDto, currentUserId?: number): Promise<IndexResponseDto[]> {
+  async findAll(filters: IndexFiltersDto, currentUserId?: number): Promise<IndexPageDto> {
+    const limit = Math.min(filters.limit ?? DEFAULT_INDEX_PAGE_SIZE, MAX_INDEX_PAGE_SIZE);
+    const offset = filters.offset ?? 0;
     const qb = this.indexRepository
       .createQueryBuilder('index')
-      .leftJoinAndSelect('index.author', 'author')
       .where('index.status = :status', { status: IndexStatus.PUBLISHED });
 
     if (filters.search) {
@@ -215,57 +231,82 @@ export class IndexesService implements OnModuleInit {
       qb.andWhere('index.cardinality = :minCardinality', { minCardinality: filters.minCardinality });
     }
 
-    qb.orderBy('index.id', 'ASC');
+    const [entities, total] = await Promise.all([
+      qb.clone().leftJoinAndSelect('index.author', 'author').orderBy('index.id', 'ASC').limit(limit).offset(offset).getMany(),
+      qb.getCount(),
+    ]);
 
-    const entities = await qb.getMany();
-    return Promise.all(entities.map((item) => this.toDto(item, currentUserId)));
+    const likedRows = currentUserId && entities.length > 0
+      ? await this.likeRepository.createQueryBuilder('like')
+          .select('like.indexId', 'id')
+          .where('like.userId = :currentUserId', { currentUserId })
+          .andWhere('like.indexId IN (:...ids)', { ids: entities.map(({ id }) => id) })
+          .getRawMany<{ id: number }>()
+      : [];
+    const likedIds = new Set(likedRows.map(({ id }) => id));
+    const items = await Promise.all(entities.map((item) => this.toDto(item, currentUserId, likedIds.has(item.id))));
+    return { items, total, offset, limit };
   }
 
-  /**
-   * 2. GET /api/indexes/feed — лента услуг (только опубликованные)
-   */
-  async getFeed(id?: number, next?: boolean, currentUserId?: number): Promise<FeedResponseDto> {
-    const publishedList = await this.indexRepository.find({
-      select: { id: true },
-      where: { status: IndexStatus.PUBLISHED },
-      order: { id: 'ASC' },
-    });
+  private clipLanguage?: Promise<LanguageIdentifier>;
 
-    if (publishedList.length === 0) {
-      return {
-        current: null,
-      };
-    }
+  async getClipCandidates(afterId: number, limit: number): Promise<ClipCandidatePageDto> {
+    const scanSize = 256;
+    const caption = 'btrim(index.shortDescription, :whitespace)';
+    // Match String.trim() even when the database locale has a different idea of whitespace.
+    const whitespace = '\t\n\v\f\r \u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000\ufeff';
+    const items: ClipCandidateDto[] = [];
+    let cursor = afterId;
+    for (;;) {
+      const rows = await this.indexRepository.createQueryBuilder('index')
+        .select('index.id', 'id')
+        .addSelect(caption, 'shortDescription')
+        .where('index.status = :status', { status: IndexStatus.PUBLISHED })
+        .andWhere('index.id > :cursor', { cursor })
+        // Exclude the reserved synthetic names even on databases seeded by the older script.
+        .andWhere('index.indexName !~ :benchmarkName', { benchmarkName: '^demo_bench_idx_[0-9]{6}$' })
+        .andWhere(`char_length(${caption}) BETWEEN 50 AND 100`, { whitespace })
+        .orderBy('index.id', 'ASC')
+        .limit(scanSize)
+        .getRawMany<ClipCandidateDto>();
+      if (rows.length === 0) break;
 
-    const ids = publishedList.map((item) => item.id);
-    let targetIndex = 0;
-
-    if (id !== undefined) {
-      const foundIdx = ids.indexOf(id);
-      if (foundIdx !== -1) {
-        if (next === true) {
-          targetIndex = (foundIdx + 1) % ids.length;
-        } else {
-          targetIndex = foundIdx;
-        }
+      // CLD3's default minimum is 140 bytes, larger than most eligible captions.
+      this.clipLanguage ??= loadModule().then((factory) => factory.create(0, 400));
+      const detector = await this.clipLanguage;
+      for (const row of rows) {
+        // On short text CLD3 can rank English first without meeting its reliability threshold.
+        if (detector.findLanguage(row.shortDescription).language !== 'en') continue;
+        if (items.length === limit) return { items, nextAfterId: items[items.length - 1].id };
+        items.push(row);
       }
+      if (rows.length < scanSize) break;
+      cursor = rows[rows.length - 1].id;
+    }
+    return { items, nextAfterId: null };
+  }
+
+  async getFeed(key: string, id: number | undefined, next: boolean, currentUserId?: number): Promise<FeedResponseDto> {
+    if (id !== undefined && !next) {
+      const [entity, metadata] = await Promise.all([this.findPublished(id), this.feedState.poll(key, id)]);
+      return { current: entity ? await this.toDto(entity, currentUserId) : null, ...metadata };
     }
 
-    const targetId = ids[targetIndex];
-    const entity = await this.indexRepository.findOne({
-      where: { id: targetId, status: IndexStatus.PUBLISHED },
-      relations: { author: true },
+    const selected = await this.feedState.select(key, next, id, async () => {
+      const sample = await this.indexRepository.createQueryBuilder('index')
+        .select('index.id', 'id')
+        .where('index.status = :status', { status: IndexStatus.PUBLISHED })
+        .orderBy('random()')
+        .limit(FEED_BATCH_SIZE)
+        .getRawMany<{ id: number }>();
+      return sample.map((row) => row.id);
     });
 
-    if (!entity) {
-      throw new NotFoundException('Индекс не найден');
-    }
+    const entity = selected.id === null ? null : await this.findPublished(selected.id);
+    if (!entity) return { current: null, position: null, batchSize: selected.batchSize };
 
-    const currentDto = await this.toDto(entity, currentUserId);
-
-    return {
-      current: currentDto,
-    };
+    const current = await this.toDto(entity, currentUserId);
+    return { current, position: selected.position, batchSize: selected.batchSize };
   }
 
   /**
@@ -412,8 +453,7 @@ export class IndexesService implements OnModuleInit {
       throw new ForbiddenException('Запрещено удалять чужую услугу');
     }
 
-    entity.status = IndexStatus.DELETED;
-    await this.indexRepository.save(entity);
+    await this.indexRepository.update({ id }, { status: IndexStatus.DELETED });
   }
 
   /**
@@ -460,15 +500,19 @@ export class IndexesService implements OnModuleInit {
    * Получение услуги по ID
    */
   async findOne(id: number, currentUserId?: number): Promise<IndexResponseDto> {
-    const entity = await this.indexRepository.findOne({
-      where: { id, status: IndexStatus.PUBLISHED },
-      relations: { author: true },
-    });
+    const entity = await this.findPublished(id);
 
     if (!entity) {
       throw new NotFoundException('Услуга не найдена');
     }
 
     return this.toDto(entity, currentUserId);
+  }
+
+  private findPublished(id: number): Promise<DatabaseIndex | null> {
+    return this.indexRepository.findOne({
+      where: { id, status: IndexStatus.PUBLISHED },
+      relations: { author: true },
+    });
   }
 }

@@ -15,6 +15,8 @@ import {
   BadRequestException,
   HttpCode,
   HttpStatus,
+  Header,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -27,12 +29,15 @@ import {
 } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import type { Response } from 'express';
+import { randomUUID } from 'node:crypto';
 import { IndexesService } from './indexes.service';
-import { IndexFiltersDto } from './dto/index-filters.dto';
+import { IndexFiltersDto, MAX_INT } from './dto/index-filters.dto';
 import { CreateDraftDto } from './dto/create-draft.dto';
 import { PublishIndexDto } from './dto/publish-index.dto';
 import { LikeIndexDto } from './dto/like-index.dto';
-import { IndexResponseDto, FeedResponseDto } from './dto/index-response.dto';
+import { CLIP_CANDIDATE_PAGE_SIZE, ClipCandidatePageDto, FeedResponseDto, IndexPageDto, IndexResponseDto } from './dto/index-response.dto';
+import { FEED_GUEST_COOKIE, FEED_TTL_SECONDS } from './feed-state.service';
 import { SessionGuard, AuthenticatedRequest } from '../auth/guards/session.guard';
 import { OptionalSessionGuard } from '../auth/guards/optional-session.guard';
 
@@ -51,11 +56,11 @@ export class IndexesController {
     summary: 'Получение каталога опубликованных индексов с фильтрацией',
     description: 'Доступно гостям и авторизованным. Возвращает список только опубликованных индексов.',
   })
-  @ApiResponse({ status: 200, description: 'Список индексов', type: [IndexResponseDto] })
+  @ApiResponse({ status: 200, description: 'Страница каталога и общее число результатов', type: IndexPageDto })
   async getIndexes(
     @Query() filters: IndexFiltersDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<IndexResponseDto[]> {
+  ): Promise<IndexPageDto> {
     return this.indexesService.findAll(filters, req.userId);
   }
 
@@ -64,22 +69,71 @@ export class IndexesController {
    * Доступно гостю и авторизованному пользователю.
    */
   @Get('feed')
+  @Header('Cache-Control', 'private, no-store')
   @UseGuards(OptionalSessionGuard)
   @ApiOperation({
-    summary: 'Получение ленты услуг с циклической навигацией',
-    description: 'Без id возвращает первую услугу. С ?id=X&next=true переходит к следующей.',
+    summary: 'Чтение или переход в случайной ленте Redis',
+    description: 'Без id читает текущую карточку. С id без next читает карточку без перехода. next=true переводит курсор, id при этом сверяется с текущей карточкой.',
   })
   @ApiQuery({ name: 'id', required: false, type: Number, description: 'ID текущей услуги' })
   @ApiQuery({ name: 'next', required: false, type: Boolean, description: 'Флаг перехода к следующей' })
-  @ApiResponse({ status: 200, description: 'Текущий элемент ленты и ссылки навигации', type: FeedResponseDto })
+  @ApiResponse({ status: 200, description: 'Текущая карточка и номер в пачке', type: FeedResponseDto })
   async getFeed(
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) res: Response,
     @Query('id') id?: string,
     @Query('next') next?: string,
-    @Req() req?: AuthenticatedRequest,
   ): Promise<FeedResponseDto> {
-    const parsedId = id !== undefined ? parseInt(id, 10) : undefined;
-    const isNext = next === 'true';
-    return this.indexesService.getFeed(parsedId, isNext, req?.userId);
+    const parsedId = id === undefined ? undefined : Number(id);
+    if (parsedId !== undefined && (typeof id !== 'string' || !/^\d+$/.test(id) || !Number.isInteger(parsedId) || parsedId < 1 || parsedId > MAX_INT)) {
+      throw new BadRequestException('id должен быть положительным целым числом');
+    }
+    if (next !== undefined && next !== 'true' && next !== 'false') {
+      throw new BadRequestException('next должен быть true или false');
+    }
+
+    let key: string;
+    if (req.userId) {
+      key = `feed:user:${req.userId}`;
+    } else {
+      let guestId: unknown = req.cookies?.[FEED_GUEST_COOKIE];
+      if (typeof guestId !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(guestId)) {
+        guestId = randomUUID();
+        res.cookie(FEED_GUEST_COOKIE, guestId, {
+          httpOnly: true,
+          sameSite: 'lax',
+          secure: req.secure,
+          path: '/api',
+          maxAge: FEED_TTL_SECONDS * 1000,
+        });
+      }
+      key = `feed:guest:${guestId}`;
+    }
+    return this.indexesService.getFeed(key, parsedId, next === 'true', req.userId);
+  }
+
+  @Get('clip-candidates')
+  @ApiOperation({ summary: 'Английские описания опубликованных карточек для локального поиска CLIP' })
+  @ApiQuery({ name: 'afterId', required: false, schema: { type: 'integer', default: 0, minimum: 0, maximum: MAX_INT } })
+  @ApiQuery({ name: 'limit', required: false, schema: { type: 'integer', default: CLIP_CANDIDATE_PAGE_SIZE, minimum: 1, maximum: CLIP_CANDIDATE_PAGE_SIZE } })
+  @ApiResponse({ status: 200, type: ClipCandidatePageDto })
+  @ApiResponse({ status: 400, description: 'Некорректный курсор или размер страницы' })
+  async getClipCandidates(
+    @Query('afterId') afterId?: string,
+    @Query('limit') limit?: string,
+  ): Promise<ClipCandidatePageDto> {
+    const parse = (value: string | undefined, name: string, defaultValue: number, min: number, max: number) => {
+      if (value === undefined) return defaultValue;
+      const parsed = Number(value);
+      if (typeof value !== 'string' || !/^\d+$/.test(value) || !Number.isInteger(parsed) || parsed < min || parsed > max) {
+        throw new BadRequestException(`${name} должен быть целым числом от ${min} до ${max}`);
+      }
+      return parsed;
+    };
+    return this.indexesService.getClipCandidates(
+      parse(afterId, 'afterId', 0, 0, MAX_INT),
+      parse(limit, 'limit', CLIP_CANDIDATE_PAGE_SIZE, 1, CLIP_CANDIDATE_PAGE_SIZE),
+    );
   }
 
   /**
@@ -157,7 +211,7 @@ export class IndexesController {
         limits: {
           fileSize: 50 * 1024 * 1024,
         },
-        fileFilter: (req, file, callback) => {
+        fileFilter: (_req, file, callback) => {
           if (file.fieldname === 'image') {
             if (!file.mimetype.match(/\/(jpg|jpeg|png|webp|svg\+xml)$/)) {
               return callback(new BadRequestException('Недопустимый формат изображения'), false);
