@@ -34,7 +34,7 @@ export class FeedStateService {
     advance: boolean,
     expectedId: number | undefined,
     sample: () => Promise<number[]>,
-  ): Promise<{ id: number | null; position: number | null; batchSize: number }> {
+  ): Promise<{ id: number | null; position: number | null; batchSize: number; shouldRotate: boolean }> {
     const redis = this.sessions.getClient();
     for (let attempt = 0; attempt < 16; attempt++) {
       const raw = await redis.get(key);
@@ -43,7 +43,7 @@ export class FeedStateService {
 
       // An explicit id also acts as a compare token for repeated Next requests.
       if (state && currentId !== undefined && (!advance || (expectedId !== undefined && (expectedId !== currentId || attempt > 0)))) {
-        return { id: currentId, position: state.cursor + 1, batchSize: state.ids.length };
+        return { id: currentId, position: state.cursor + 1, batchSize: state.ids.length, shouldRotate: false };
       }
 
       let ids: number[];
@@ -54,14 +54,14 @@ export class FeedStateService {
       } else {
         ids = await sample();
         cursor = 0;
-        if (ids.length === 0) return { id: null, position: null, batchSize: 0 };
+        if (ids.length === 0) return { id: null, position: null, batchSize: 0, shouldRotate: false };
         // Don't repeat the last card immediately at a batch boundary, if possible.
         if (ids.length > 1 && ids[0] === currentId) [ids[0], ids[1]] = [ids[1], ids[0]];
       }
 
       const replacement: FeedState = { ids, cursor, revision: randomUUID() };
       const saved = await redis.eval(COMPARE_AND_SET, 1, key, raw ?? '', JSON.stringify(replacement), FEED_TTL_SECONDS);
-      if (saved === 1) return { id: ids[cursor], position: cursor + 1, batchSize: ids.length };
+      if (saved === 1) return { id: ids[cursor], position: cursor + 1, batchSize: ids.length, shouldRotate: advance };
     }
 
     throw new ServiceUnavailableException('Лента занята, попробуйте снова');

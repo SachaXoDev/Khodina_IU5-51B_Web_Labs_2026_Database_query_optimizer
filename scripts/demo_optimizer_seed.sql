@@ -28,15 +28,16 @@ WITH candidates(n, index_name, table_name, index_type, column_name, cardinality)
 )
 INSERT INTO public.database_indexes (
   index_name, short_description, table_name, index_type, column_name, cardinality,
-  full_description, image_url, video_url, status, author_id,
-  created_at, published_at
+  full_description, image_url, video_url, model_key, status, author_id,
+  created_at, published_at, rotation_x, rotation_y
 )
 SELECT index_name, format('Benchmark row %s', n),
        table_name, index_type, column_name, cardinality,
        'Generated data for the PostgreSQL equality-and-ordering experiment.',
-       '/assets/default_index.svg', '/assets/default_video.mp4',
+       '/assets/default_index.svg', '/assets/default_video.mp4', '/assets/demo-index-model.glb',
        'published', (SELECT id FROM public.users WHERE username = 'pg_expert'),
-       timestamp '2026-01-01 12:00:00', timestamp '2026-01-01 12:00:00'
+       timestamp '2026-01-01 12:00:00', timestamp '2026-01-01 12:00:00',
+       (n * 137 % 360) * pi() / 180, (n * 173 % 360) * pi() / 180
 FROM candidates AS c
 WHERE NOT EXISTS (SELECT 1 FROM public.database_indexes AS i WHERE i.index_name = c.index_name)
 ORDER BY n;
@@ -62,14 +63,15 @@ WITH curated(n, slug, description, table_name, index_type, column_name, cardinal
 )
 INSERT INTO public.database_indexes (
   index_name, short_description, table_name, index_type, column_name, cardinality,
-  full_description, image_url, video_url, status, author_id,
-  created_at, published_at
+  full_description, image_url, video_url, model_key, status, author_id,
+  created_at, published_at, rotation_x, rotation_y
 )
 SELECT 'demo_clip_' || slug, description, table_name, index_type, column_name, cardinality,
        format('Curated semantic example. The %s index supports queries on %s.%s.', index_type, table_name, column_name),
-       coalesce(image, '/assets/default_index.svg'), '/assets/default_video.mp4',
+       coalesce(image, '/assets/default_index.svg'), '/assets/default_video.mp4', '/assets/demo-index-model.glb',
        'published', (SELECT id FROM public.users WHERE username = 'pg_expert'),
-       timestamp '2026-01-01 12:00:00', timestamp '2026-01-01 12:00:00'
+       timestamp '2026-01-01 12:00:00', timestamp '2026-01-01 12:00:00',
+       (n * 137 % 360) * pi() / 180, (n * 173 % 360) * pi() / 180
 FROM curated AS c
 WHERE NOT EXISTS (SELECT 1 FROM public.database_indexes AS i WHERE i.index_name = 'demo_clip_' || c.slug)
 ORDER BY n;

@@ -43,6 +43,15 @@ export class DatabaseIndex {
   @Column({ name: 'video_url', nullable: true, type: 'varchar', default: 'default_video.mp4' })
   videoUrl: string | null;
 
+  @Column({ name: 'model_key', type: 'varchar', nullable: true })
+  modelKey: string | null;
+
+  @Column({ name: 'rotation_x', type: 'double precision', default: () => 'random() * 2 * pi()' })
+  rotationX: number;
+
+  @Column({ name: 'rotation_y', type: 'double precision', default: () => 'random() * 2 * pi()' })
+  rotationY: number;
+
   @Column({ name: 'clip_candidate', default: false })
   clipCandidate: boolean;
 

@@ -16,6 +16,7 @@ import {
   HttpCode,
   HttpStatus,
   Header,
+  Headers,
   Res,
 } from '@nestjs/common';
 import {
@@ -37,6 +38,7 @@ import { CreateDraftDto } from './dto/create-draft.dto';
 import { PublishIndexDto } from './dto/publish-index.dto';
 import { LikeIndexDto } from './dto/like-index.dto';
 import { CLIP_CANDIDATE_PAGE_SIZE, ClipCandidatePageDto, FeedResponseDto, IndexPageDto, IndexResponseDto } from './dto/index-response.dto';
+import { RotationDto } from './dto/rotation.dto';
 import { FEED_GUEST_COOKIE, FEED_TTL_SECONDS } from './feed-state.service';
 import { SessionGuard, AuthenticatedRequest } from '../auth/guards/session.guard';
 import { OptionalSessionGuard } from '../auth/guards/optional-session.guard';
@@ -194,6 +196,7 @@ export class IndexesController {
         fullDescription: { type: 'string', example: 'B-Tree индекс ускоряет поиск клиентов.' },
         image: { type: 'string', format: 'binary', description: 'Изображение для карточки' },
         video: { type: 'string', format: 'binary', description: 'Видеоролик для ленты' },
+        model: { type: 'string', format: 'binary', description: 'Модель glTF Binary (.glb)' },
       },
       required: ['indexName'],
     },
@@ -205,6 +208,7 @@ export class IndexesController {
       [
         { name: 'image', maxCount: 1 },
         { name: 'video', maxCount: 1 },
+        { name: 'model', maxCount: 1 },
       ],
       {
         storage: memoryStorage(),
@@ -222,6 +226,9 @@ export class IndexesController {
               return callback(new BadRequestException('Недопустимый формат видео'), false);
             }
           }
+          if (file.fieldname === 'model' && !/\.glb$/i.test(file.originalname)) {
+            return callback(new BadRequestException('Ожидается модель .glb'), false);
+          }
           callback(null, true);
         },
       },
@@ -234,12 +241,13 @@ export class IndexesController {
     files?: {
       image?: Express.Multer.File[];
       video?: Express.Multer.File[];
+      model?: Express.Multer.File[];
     },
   ): Promise<IndexResponseDto> {
     const imageFile = files?.image?.[0];
     const videoFile = files?.video?.[0];
     // Автор строго из сессии req.userId
-    return this.indexesService.createOrUpdateDraft(dto, req.userId!, imageFile, videoFile);
+    return this.indexesService.createOrUpdateDraft(dto, req.userId!, imageFile, videoFile, files?.model?.[0]);
   }
 
   /**
@@ -263,6 +271,20 @@ export class IndexesController {
     @Body() dto?: PublishIndexDto,
   ): Promise<IndexResponseDto> {
     return this.indexesService.publish(id, req.userId!, dto);
+  }
+
+  @Put(':id/rotation')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Сохранение результата расчёта от сервиса поворота' })
+  @ApiResponse({ status: 204, description: 'Поворот сохранён' })
+  @ApiResponse({ status: 401, description: 'Неверный X-Result-Key' })
+  async saveRotation(
+    @Param('id', ParseIntPipe) id: number,
+    @Headers('x-result-key') resultKey: string | undefined,
+    @Body() dto: RotationDto,
+  ): Promise<void> {
+    if (id < 1 || id > MAX_INT) throw new BadRequestException('Некорректный id');
+    await this.indexesService.saveRotation(id, resultKey, dto);
   }
 
   /**

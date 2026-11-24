@@ -56,7 +56,7 @@ export class MinioService implements OnModuleInit {
 
       const files = fs.readdirSync(folder);
       for (const fileName of files) {
-        if (fileName.startsWith('.')) continue; // Пропуск .DS_Store
+        if (fileName.startsWith('.') || fileName.endsWith('.glb')) continue;
         const filePath = path.join(folder, fileName);
         if (!fs.statSync(filePath).isFile()) continue;
 
@@ -98,10 +98,11 @@ export class MinioService implements OnModuleInit {
   async uploadMediaFile(
     fileBuffer: Buffer,
     originalName: string,
-    prefix: 'image' | 'video',
+    prefix: 'image' | 'video' | 'model',
     mimeType?: string,
   ): Promise<string> {
-    const ext = path.extname(originalName).toLowerCase() || (prefix === 'image' ? '.jpg' : '.mp4');
+    const fallbackExt = { image: '.jpg', video: '.mp4', model: '.glb' }[prefix];
+    const ext = path.extname(originalName).toLowerCase() || fallbackExt;
     const cleanExt = ext.replace(/[^a-z0-9.]/gi, '');
     const randomSuffix = Math.random().toString(36).substring(2, 8);
     const timestamp = Date.now();
@@ -115,7 +116,7 @@ export class MinioService implements OnModuleInit {
         ? cleanExt === '.png'
           ? 'image/png'
           : 'image/jpeg'
-        : 'video/mp4');
+        : prefix === 'model' ? 'model/gltf-binary' : 'video/mp4');
 
     await this.minioClient.putObject(
       this.bucketName,
@@ -140,7 +141,7 @@ export class MinioService implements OnModuleInit {
     // Если в БД хранился относительный путь вида /media/xxx.jpg или /assets/xxx.svg, очищаем до чистого имени
     const cleanFileName = fileName.replace(/^\/?(media|assets)\//, '');
     // Bundled files do not need MinIO; all uploaded keys use the index_* timestamp prefix.
-    if (['assets/default_index.svg', 'assets/default_video.mp4'].includes(fileName.replace(/^\//, ''))) {
+    if (['assets/default_index.svg', 'assets/default_video.mp4', 'assets/demo-index-model.glb'].includes(fileName.replace(/^\//, ''))) {
       return `/${fileName.replace(/^\//, '')}`;
     }
     if (/^(?:index_(?:users_email|orders_created_at|products_sku|logs_timestamp)|idx_analytics_event_date_btree)\.(?:jpg|mp4)$/.test(cleanFileName)) {

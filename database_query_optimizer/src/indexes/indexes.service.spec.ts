@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { IndexesService } from './indexes.service';
+import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../users/entities/user.entity';
 import { DatabaseIndex } from './entities/database-index.entity';
@@ -19,6 +20,7 @@ describe('IndexesService', () => {
         { provide: getRepositoryToken(User), useValue: {} },
         { provide: MinioService, useValue: {} },
         { provide: FeedStateService, useValue: {} },
+        { provide: ConfigService, useValue: {} },
       ],
     }).compile();
 

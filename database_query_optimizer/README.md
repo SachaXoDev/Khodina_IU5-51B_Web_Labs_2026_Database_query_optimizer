@@ -131,3 +131,12 @@ python3 scripts/verify-feed.py --api http://127.0.0.1:3108 --redis-port <пор�
 - Гостевой `GET /api/indexes/clip-candidates?afterId=0&limit=100` возвращает `items` (`id`, `shortDescription`) и `nextAfterId`. Передавайте курсор до `null`. Синтетические записи бенчмарка исключены, поиск по фото выполняется локально в Tauri.
 
 В каталоге бэкенда `npm test` запускает unit-тесты, а `npm run test:e2e` проверяет HTTP с запущенными сервисами учебного стенда. Swagger доступен по `/api/docs`.
+
+## Дополнительное задание: асинхронный поворот GLB
+
+Ветка `extras/async-rotation` включает возможности `extras/indexes` и добавляет работу с отдельным Python/Asyncio worker. Для воспроизводимой демонстрации создайте пустую учебную БД на этой ветке, затем выполните seed по инструкции выше: он назначает комплектную модель `/assets/demo-index-model.glb`. Seed не перезаписывает карточки, уже созданные на ветке без GLB.
+
+1. В NestJS задайте `ASYNC_ROTATION_URL=http://127.0.0.1:8108/rotate`. В worker задайте `ROTATION_MAIN_API=http://127.0.0.1:3108/api`. Передайте обоим процессам один `ROTATION_RESULT_KEY` через закрытое окружение; не записывайте его в Git. Worker по умолчанию слушает `127.0.0.1:8108` и ждёт 6 секунд перед callback.
+2. Прочитайте ленту через `GET /api/indexes/feed`, сохраните cookie, затем перейдите к следующей карточке через `GET /api/indexes/feed?next=true&id=<текущий ID>`. Успешное продвижение инициирует `POST /rotate` к worker без ожидания расчёта. Ответ ленты содержит `current.modelUrl`, `current.rotationX` и `current.rotationY`. Последующие `GET /api/indexes/feed?id=<новый ID>` не двигают курсор и не запускают worker повторно. Сравните углы до и после callback.
+3. Отдельно проверьте `POST /rotate` на порту worker с JSON `{"id":1,"rotationX":0.5,"rotationY":1.0}`, заменив `1` на ID опубликованной карточки. Ожидается `202`; новые углы видны приблизительно через 6 секунд. Для проверки callback в закрытом окружении отправьте `PUT /api/indexes/<ID>/rotation` с JSON полями `rotationX`, `rotationY` и заголовком `X-Result-Key`: `204` при успехе, `401` без верного ключа.
+4. В авторизованной сессии приложите `model` как поле multipart-запроса `POST /api/indexes` для создания или обновления черновика. Можно использовать небольшой `public/assets/demo-index-model.glb` из каталога бэкенда. Повреждённый GLB с невалидным JSON отклоняется с `400`. Опубликуйте черновик и откройте `modelUrl`. Для браузерного чтения подписанного URL разрешите `GET` с origin веб-клиента в CORS бакета MinIO.

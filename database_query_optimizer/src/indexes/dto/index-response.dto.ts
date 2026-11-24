@@ -29,6 +29,15 @@ export class IndexResponseDto {
   })
   videoUrl: string | null;
 
+  @ApiProperty({ type: String, nullable: true })
+  modelUrl: string | null;
+
+  @ApiProperty({ description: 'Поворот по оси X в радианах' })
+  rotationX: number;
+
+  @ApiProperty({ description: 'Поворот по оси Y в радианах' })
+  rotationY: number;
+
   @ApiProperty({ enum: IndexStatus })
   status: IndexStatus;
 

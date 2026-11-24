@@ -5,8 +5,11 @@ import {
   ForbiddenException,
   OnModuleInit,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { loadModule, type LanguageIdentifier } from 'cld3-asm';
 import { Repository } from 'typeorm';
 import { DatabaseIndex, IndexStatus } from './entities/database-index.entity';
@@ -18,9 +21,37 @@ import { CreateDraftDto } from './dto/create-draft.dto';
 import { PublishIndexDto } from './dto/publish-index.dto';
 import { ClipCandidateDto, ClipCandidatePageDto, FeedResponseDto, IndexPageDto, IndexResponseDto } from './dto/index-response.dto';
 import { FeedStateService, FEED_BATCH_SIZE } from './feed-state.service';
+import { RotationDto } from './dto/rotation.dto';
 
+const DEMO_MODEL = '/assets/demo-index-model.glb';
 const DEMO_IMAGE = '/assets/default_index.svg';
 const DEMO_VIDEO = '/assets/default_video.mp4';
+
+function validateGlb(file: Express.Multer.File): void {
+  const data = file.buffer;
+  if (!/\.glb$/i.test(file.originalname) || data.length < 20 || data.length % 4 !== 0 ||
+      data.toString('ascii', 0, 4) !== 'glTF' || data.readUInt32LE(4) !== 2 ||
+      data.readUInt32LE(8) !== data.length || data.toString('ascii', 16, 20) !== 'JSON') {
+    throw new BadRequestException('Некорректный файл glTF Binary 2.0');
+  }
+
+  try {
+    let offset = 12;
+    while (offset < data.length) {
+      if (offset + 8 > data.length) throw new Error('Truncated chunk');
+      const length = data.readUInt32LE(offset);
+      const next = offset + 8 + length;
+      if (length % 4 !== 0 || next > data.length) throw new Error('Invalid chunk length');
+      if (offset === 12) {
+        const json = JSON.parse(data.toString('utf8', 20, next));
+        if (json?.asset?.version !== '2.0') throw new Error('Invalid glTF asset version');
+      }
+      offset = next;
+    }
+  } catch {
+    throw new BadRequestException('Некорректная структура файла .glb');
+  }
+}
 
 @Injectable()
 export class IndexesService implements OnModuleInit {
@@ -35,6 +66,7 @@ export class IndexesService implements OnModuleInit {
     private readonly userRepository: Repository<User>,
     private readonly minioService: MinioService,
     private readonly feedState: FeedStateService,
+    private readonly config: ConfigService,
   ) {}
 
   async onModuleInit() {
@@ -150,6 +182,7 @@ export class IndexesService implements OnModuleInit {
         const entity = this.indexRepository.create({
           ...item,
           authorId: authors[(item.authorId ?? 1) - 1]?.id ?? authors[0]?.id,
+          modelKey: DEMO_MODEL,
         });
         await this.indexRepository.save(entity);
       }
@@ -167,10 +200,11 @@ export class IndexesService implements OnModuleInit {
         })
       : false);
 
-    const [imageUrl, videoUrl] = await Promise.all([
+    const [imageUrl, videoUrl, modelUrl] = await Promise.all([
       entity.imageUrl === 'default_index.jpg' || entity.imageUrl === 'default_index.svg'
         ? DEMO_IMAGE : this.minioService.getPresignedUrl(entity.imageUrl),
       entity.videoUrl === 'default_video.mp4' ? DEMO_VIDEO : this.minioService.getPresignedUrl(entity.videoUrl),
+      this.minioService.getPresignedUrl(entity.modelKey),
     ]);
 
     let authorUsername = entity.author ? entity.author.username : null;
@@ -189,6 +223,9 @@ export class IndexesService implements OnModuleInit {
       videoFileName: entity.videoUrl ?? null,
       imageUrl: imageUrl ?? null,
       videoUrl: videoUrl ?? null,
+      modelUrl: modelUrl ?? null,
+      rotationX: entity.rotationX,
+      rotationY: entity.rotationY,
       status: entity.status,
       tableName: entity.tableName ?? '',
       indexType: entity.indexType ?? '',
@@ -306,7 +343,51 @@ export class IndexesService implements OnModuleInit {
     if (!entity) return { current: null, position: null, batchSize: selected.batchSize };
 
     const current = await this.toDto(entity, currentUserId);
+    if (selected.shouldRotate) void this.requestRotation(entity);
     return { current, position: selected.position, batchSize: selected.batchSize };
+  }
+
+  private async requestRotation(entity: DatabaseIndex): Promise<void> {
+    const configuredUrl = this.config.get<string>('ASYNC_ROTATION_URL');
+    if (!configuredUrl) {
+      this.logger.warn(`Поворот ${entity.id} пропущен: переменная ASYNC_ROTATION_URL не задана`);
+      return;
+    }
+
+    try {
+      const endpoint = new URL(configuredUrl);
+      const pathname = endpoint.pathname.replace(/\/+$/, '');
+      endpoint.pathname = pathname.endsWith('/rotate') ? pathname : `${pathname}/rotate`;
+
+      const { id, rotationX, rotationY } = entity;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, rotationX, rotationY }),
+        redirect: 'error',
+        signal: AbortSignal.timeout(2500),
+      });
+      await response.body?.cancel();
+      if (response.status !== 202) throw new Error(`HTTP ${response.status}`);
+    } catch (error) {
+      this.logger.warn(`Не удалось запустить поворот для ${entity.id}: ${String(error)}`);
+    }
+  }
+
+  async saveRotation(id: number, suppliedKey: string | undefined, dto: RotationDto): Promise<void> {
+    const expectedKey = this.config.get<string>('ROTATION_RESULT_KEY');
+    if (!expectedKey || typeof suppliedKey !== 'string' || !timingSafeEqual(
+      createHash('sha256').update(suppliedKey).digest(), createHash('sha256').update(expectedKey).digest(),
+    )) {
+      throw new UnauthorizedException('Неверный X-Result-Key');
+    }
+
+    const { rotationX, rotationY } = dto;
+    if (!Number.isFinite(rotationX) || !Number.isFinite(rotationY)) {
+      throw new BadRequestException('Углы поворота должны быть конечными числами');
+    }
+    const result = await this.indexRepository.update({ id, status: IndexStatus.PUBLISHED }, { rotationX, rotationY });
+    if (!result.affected) throw new NotFoundException('Услуга не найдена');
   }
 
   /**
@@ -337,7 +418,10 @@ export class IndexesService implements OnModuleInit {
     currentUserId: number,
     imageFile?: Express.Multer.File,
     videoFile?: Express.Multer.File,
+    modelFile?: Express.Multer.File,
   ): Promise<IndexResponseDto> {
+    if (modelFile) validateGlb(modelFile);
+
     let draft = await this.indexRepository.findOne({
       where: {
         authorId: currentUserId,
@@ -348,6 +432,8 @@ export class IndexesService implements OnModuleInit {
 
     let imageFileName = draft ? draft.imageUrl : null;
     let videoFileName = draft ? draft.videoUrl : null;
+    const previousModelKey = draft?.modelKey ?? null;
+    let modelKey = previousModelKey;
 
     if (imageFile) {
       if (draft && draft.imageUrl && !draft.imageUrl.startsWith('default_')) {
@@ -373,6 +459,10 @@ export class IndexesService implements OnModuleInit {
       );
     }
 
+    if (modelFile) {
+      modelKey = await this.minioService.uploadMediaFile(modelFile.buffer, modelFile.originalname, 'model', 'model/gltf-binary');
+    }
+
     if (!draft) {
       draft = this.indexRepository.create({
         ...dto,
@@ -380,15 +470,20 @@ export class IndexesService implements OnModuleInit {
         authorId: currentUserId, // Привязка автора строго из сессии
         imageUrl: imageFileName || 'default_index.jpg',
         videoUrl: videoFileName || 'default_video.mp4',
+        modelKey,
         likesCount: 0,
       });
     } else {
       Object.assign(draft, dto);
       if (imageFileName) draft.imageUrl = imageFileName;
       if (videoFileName) draft.videoUrl = videoFileName;
+      draft.modelKey = modelKey;
     }
 
     const saved = await this.indexRepository.save(draft);
+    if (modelFile && previousModelKey && previousModelKey !== DEMO_MODEL) {
+      await this.minioService.deleteFile(previousModelKey);
+    }
     const reloaded = await this.indexRepository.findOne({
       where: { id: saved.id },
       relations: { author: true },
