@@ -1,0 +1,34 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Index Catalog",
+  "version": "0.1.0",
+  "identifier": "edu.hodina.index-catalog",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [{
+      "label": "main",
+      "title": "Каталог индексов — DB Optimizer",
+      "width": 1160,
+      "height": 800,
+      "minWidth": 620,
+      "minHeight": 520,
+      "useHttpsScheme": true
+    }],
+    "security": {
+      "csp": "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' blob: data:; connect-src 'self' ipc: http://ipc.localhost https://ipc.localhost https://huggingface.co https://*.huggingface.co https://*.hf.co; worker-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+      "devCsp": "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' ipc: http://ipc.localhost https://ipc.localhost ws://127.0.0.1:1420 https://huggingface.co https://*.huggingface.co https://*.hf.co; worker-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    }
+  },
+  "plugins": { "http": { "scopeRedirects": true } },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg", "deb", "appimage", "nsis"],
+    "icon": ["icons/icon.png", "icons/icon.ico", "icons/icon.icns"],
+    "category": "DeveloperTool"
+  }
+}

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.cache/
+.env.local
+.env.*.local
+src-tauri/target/
+src-tauri/gen/
+public/models/
